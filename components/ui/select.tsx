@@ -15,7 +15,7 @@ export function SelectTrigger({ className, ...props }: React.ComponentProps<type
   return (
     <SelectPrimitive.Trigger
       className={cn(
-        "inline-flex items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50",
+        "inline-flex items-center justify-between rounded-md border border-input bg-input px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50 dark:bg-input dark:border-border dark:text-foreground",
         className
       )}
       {...props}
@@ -31,7 +31,7 @@ export function SelectContent({ className, ...props }: React.ComponentProps<type
   return (
     <SelectPrimitive.Content
       className={cn(
-        "z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md animate-in fade-in-0 slide-in-from-top-2",
+        "z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md animate-in fade-in-0 slide-in-from-top-2 dark:bg-popover dark:text-popover-foreground",
         className
       )}
       {...props}

@@ -1,59 +1,57 @@
-"use client"
-import { DashboardCard } from "./ui/dashboard-card"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts"
-import { Users, MapPin } from "lucide-react"
-import { useMerchants } from "@/contexts/merchant-context"
 
-// Cukup deklarasikan satu kali di paling atas
-const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#84cc16", "#f97316"]
+"use client";
 
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  ResponsiveContainer,
+  BarChart,
+  PieChart,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  Cell,
+  CartesianGrid,
+  Pie,
+  Bar,
+} from "recharts";
+import { Users, MapPin } from "lucide-react";
+import { useMerchants } from "@/contexts/merchant-context";
+
+const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#84cc16", "#f97316"];
+const moneyFormatter = (number: number) => `Rp ${new Intl.NumberFormat('id').format(number)}`;
+
+// PERBAIKAN: Seluruh logika dan JSX harus berada di dalam fungsi komponen
 export function SegmentDistribution() {
-  const { stats } = useMerchants()
-
+  const { stats } = useMerchants();
   const chartData = Object.entries(stats.segmentDistribution).map(([segment, count]) => ({
-    segment,
-    count,
-  }))
-
-  const renderCustomizedLabel = ({ percent }: { percent: number }) => {
-    return `${(percent * 100).toFixed(1)}%`;
-  };
-
+    name: segment,
+    value: count,
+  }));
   if (chartData.length === 0) {
     return (
-      <DashboardCard>
+      <Card className="transition-shadow hover:shadow-md">
+        <div className="h-1 w-full rounded-t-lg bg-mandiri-blue" />
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Users className="w-5 h-5" /> Merchant Segments</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="h-64 flex items-center justify-center text-gray-500">No segment data available</div>
+        <CardContent className="h-72 flex items-center justify-center text-muted-foreground">
+          No segment data available
         </CardContent>
-      </DashboardCard>
+      </Card>
     );
   }
-
   return (
-    <DashboardCard>
+    <Card className="transition-shadow hover:shadow-md">
+      <div className="h-1 w-full rounded-t-lg bg-mandiri-blue" />
       <CardHeader>
         <CardTitle className="flex items-center gap-2"><Users className="w-5 h-5" /> Merchant Segments</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-64">
+        <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-              <Pie
-                data={chartData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={renderCustomizedLabel}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="count"
-                nameKey="segment"
-              >
+              <Pie data={chartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ percent }: { percent: number }) => `${(percent * 100).toFixed(0)}%`}>
                 {chartData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
@@ -64,105 +62,132 @@ export function SegmentDistribution() {
           </ResponsiveContainer>
         </div>
       </CardContent>
-    </DashboardCard>
-  );
-}
-
-export function TransactionTrendChart() {
-  const { stats } = useMerchants();
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>4-Week Transaction (Trx) Trend</CardTitle>
-      </CardHeader>
-      <CardContent className="h-72">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={stats.trxTrend}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="week" />
-            <YAxis />
-            <Tooltip formatter={(value: number) => [value.toLocaleString(), "Transactions"]} />
-            <Bar dataKey="trx" fill="#3b82f6" name="Transactions" />
-          </BarChart>
-        </ResponsiveContainer>
-      </CardContent>
     </Card>
   );
 }
 
 export function EDCByBranch() {
   const { stats } = useMerchants();
-
   const chartData = Object.entries(stats.edcByBranch)
     .map(([branch, count]) => ({ branch, count: Number(count) }))
-    .filter(item => 
-      typeof item.branch === 'string' && 
-      item.branch.trim() !== '' && 
-      item.branch !== 'Unknown' &&
-      !isNaN(item.count)
-    )
+    .filter(item => item.branch && item.branch !== 'Unknown' && !isNaN(item.count))
     .sort((a, b) => b.count - a.count)
     .slice(0, 10);
-
   if (chartData.length === 0) {
     return (
-      <DashboardCard>
+      <Card className="transition-shadow hover:shadow-md">
+        <div className="h-1 w-full rounded-t-lg bg-mandiri-blue" />
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><MapPin className="w-5 h-5" /> EDC Devices by Branch</CardTitle>
+          <CardTitle className="flex items-center gap-2"><MapPin className="w-5 h-5" /> EDC Devices by Branch (Top 10)</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-64 flex items-center justify-center text-gray-500">No valid branch data available</div>
+          <div className="h-72 flex items-center justify-center text-muted-foreground">No valid branch data available</div>
         </CardContent>
-      </DashboardCard>
+      </Card>
     );
   }
-
   return (
-    <DashboardCard>
+    <Card className="transition-shadow hover:shadow-md">
+      <div className="h-1 w-full rounded-t-lg bg-mandiri-blue" />
       <CardHeader>
         <CardTitle className="flex items-center gap-2"><MapPin className="w-5 h-5" /> EDC Devices by Branch (Top 10)</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-64">
+        <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 30, left: 100, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis type="number" />
-              <YAxis 
-                type="category" 
-                dataKey="branch" 
-                width={100} 
-                tick={{ fontSize: 10 }}
-                interval={0}
-              />
+              <YAxis dataKey="branch" type="category" width={100} tick={{ fontSize: 12 }} />
               <Tooltip formatter={(value: number) => [value, "EDC Devices"]} />
               <Bar dataKey="count" fill="#3b82f6" barSize={20} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </CardContent>
-    </DashboardCard>
+    </Card>
+  );
+}
+
+export function TransactionTrendChart() {
+  const { stats } = useMerchants();
+  const chartData = (stats.trxTrend || []).map(item => ({
+    week: item.week,
+    trx: item.trx,
+  }));
+  if (chartData.length === 0) {
+    return (
+      <Card className="transition-shadow hover:shadow-md">
+        <div className="h-1 w-full rounded-t-lg bg-mandiri-blue" />
+        <CardHeader>
+          <CardTitle>4-Week Transaction (Trx) Trend</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-72 flex items-center justify-center text-muted-foreground">No transaction data available</div>
+        </CardContent>
+      </Card>
+    );
+  }
+  return (
+    <Card className="transition-shadow hover:shadow-md">
+      <div className="h-1 w-full rounded-t-lg bg-mandiri-blue" />
+      <CardHeader>
+        <CardTitle>4-Week Transaction (Trx) Trend</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="h-72">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="week" />
+              <YAxis />
+              <Tooltip formatter={(value: number) => [value, "Transactions"]} />
+              <Bar dataKey="trx" fill="#8b5cf6" name="Transactions" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
 export function SalesVolumeTrendChart() {
   const { stats } = useMerchants();
+  const chartData = (stats.svTrend || []).map(item => ({
+    week: item.week,
+    sv: item.sv,
+  }));
+  if (chartData.length === 0) {
+    return (
+      <Card className="transition-shadow hover:shadow-md">
+        <div className="h-1 w-full rounded-t-lg bg-mandiri-blue" />
+        <CardHeader>
+          <CardTitle>4-Week Sales Volume (SV) Trend</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-72 flex items-center justify-center text-muted-foreground">No sales volume data available</div>
+        </CardContent>
+      </Card>
+    );
+  }
   return (
-    <Card>
+    <Card className="transition-shadow hover:shadow-md">
+      <div className="h-1 w-full rounded-t-lg bg-mandiri-blue" />
       <CardHeader>
         <CardTitle>4-Week Sales Volume (SV) Trend</CardTitle>
       </CardHeader>
-      <CardContent className="h-72">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={stats.svTrend}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="week" />
-            <YAxis tickFormatter={(value: number) => `Rp${(value / 1000000).toFixed(1)}M`} />
-            <Tooltip formatter={(value: number) => `Rp${value.toLocaleString()}`} />
-            <Bar dataKey="sv" fill="#10b981" name="Sales Volume" />
-          </BarChart>
-        </ResponsiveContainer>
+      <CardContent>
+        <div className="h-72">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="week" />
+              <YAxis tickFormatter={(value: number) => `Rp${(value / 1000000).toFixed(1)}M`} />
+              <Tooltip formatter={(value: number) => `Rp${value.toLocaleString()}`} />
+              <Bar dataKey="sv" fill="#10b981" name="Sales Volume" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </CardContent>
     </Card>
   );

@@ -1,4 +1,5 @@
 "use client"
+import Image from "next/image";
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -9,13 +10,18 @@ import { CSVUpload } from "@/components/csv-upload"
 // import { MerchantMap } from "@/components/merchant-map"
 import dynamic from 'next/dynamic'
 import { SegmentDistribution, EDCByBranch, TransactionTrendChart, SalesVolumeTrendChart } from "@/components/dashboard-charts"
+import { TopMerchantsMDFGChart } from "@/components/top-merchants-mdfg-chart"
+import { TopLOBByMDFGChart, TopLOBBySVChart } from "@/components/top-lob-charts"
 import { ExportReports } from "@/components/export-reports"
 import { useMerchants } from "@/contexts/merchant-context"
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { KPICard } from "@/components/kpi-card"
+import { UserNav } from "@/components/user-nav"
 import { TopMerchantsTable } from "@/components/top-merchants-table"
 import { TopBranchesTable } from "@/components/top-branches-table"
-import ReactSelect from "react-select"
+import { MobileNav } from "@/components/mobile-nav"
+import { FilterSheet } from "@/components/filter-sheet"
+import { ThemedReactSelect } from "@/components/ui/themed-react-select"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 
 export default function DashboardPage() {
@@ -65,35 +71,38 @@ export default function DashboardPage() {
   const handleFilterChange = (key: 'cbg' | 'segmen', value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
+  const [activeTab, setActiveTab] = useState("overview");
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-gray-50">
+  <div className="min-h-screen">
         {/* Header */}
-        <header className="bg-white shadow-sm border-b">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <div className="flex items-center">
-                <h1 className="text-xl font-semibold text-blue-900">Bank Mandiri - Merchant Tracker</h1>
-              </div>
-              <div className="flex items-center gap-4">
-                <span className="text-sm text-gray-600">
-                  Welcome, {user?.username} ({user?.role})
-                </span>
-                <Button variant="outline" size="sm" onClick={logout}>
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Logout
-                </Button>
-              </div>
-            </div>
-          </div>
-        </header>
+  <header className="sticky top-0 z-20 bg-card shadow-sm border-b">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="flex justify-between items-center h-16">
+        <div className="flex items-center gap-2">
+          <MobileNav className="md:hidden" setActiveTab={setActiveTab} />
+          <Image
+            src="/logo-mit.png"
+            alt="m.it Logo"
+            width={220}
+            height={60}
+            className="h-15 w-auto"
+            priority
+          />
+        </div>
+        <div className="flex items-center gap-4">
+          <UserNav />
+        </div>
+      </div>
+    </div>
+  </header>
 
         {/* Main Content */}
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* ...existing code... */}
           {/* Tabs & Content */}
-          <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList className="hidden md:grid w-full grid-cols-4">
               <TabsTrigger value="overview">Overview & Map</TabsTrigger>
               {checkPermission("upload") && <TabsTrigger value="upload">Upload Data</TabsTrigger>}
               {checkPermission("export") && <TabsTrigger value="reports">Reports</TabsTrigger>}
@@ -104,12 +113,12 @@ export default function DashboardPage() {
                 <>
                   {/* Hero Section */}
                   <div className="text-center mb-8">
-                    <h2 className="text-3xl font-bold text-blue-900 mb-2">Selamat Datang di Merchant Tracker</h2>
+                    <h2 className="text-3xl font-bold text-foreground mb-2">Selamat Datang di Merchant Tracker</h2>
                     <p className="text-base text-muted-foreground mb-6 max-w-lg mx-auto">Platform analitik merchant Bank Mandiri. Unggah data merchant Anda untuk mulai menganalisis, memantau performa, dan mengekspor laporan.</p>
                   </div>
                   {/* Upload Area */}
                   <div className="max-w-2xl mx-auto">
-                    <div className="border-2 border-dashed rounded-xl p-10 bg-white flex flex-col items-center justify-center">
+                    <div className="border-2 border-dashed rounded-xl p-10 bg-card flex flex-col items-center justify-center">
                       <CSVUpload />
                     </div>
                     {/* Accordion for Required Columns */}
@@ -123,20 +132,27 @@ export default function DashboardPage() {
                   {/* Kolom Kiri: Konten Utama */}
                   <div className="lg:col-span-2 flex flex-col gap-6">
                     {/* Filter */}
-                    <div className="w-full flex flex-col sm:flex-row gap-4 mb-2 items-center sm:items-center flex-wrap p-4 bg-white rounded-lg shadow-sm border">
+                    <div className="md:hidden mb-4">
+                      <FilterSheet
+                        filters={filters}
+                        setFilters={setFilters}
+                        cbgOptions={cbgOptions}
+                        segmenOptions={segmenOptions}
+                      />
+                    </div>
+                    <div className="w-full flex flex-col sm:flex-row gap-4 mb-2 items-center sm:items-center flex-wrap p-4 bg-card rounded-lg shadow-sm border hidden md:flex">
                       <div className="flex flex-col w-[260px]">
-                        <label className="text-sm font-medium text-gray-700 mb-1">Cabang</label>
-                        <ReactSelect
+                        <label className="text-sm font-medium text-foreground mb-1">Cabang</label>
+                        <ThemedReactSelect
                           options={cbgOptions}
                           value={cbgOptions.find(opt => opt.value === filters.cbg)}
                           onChange={opt => handleFilterChange('cbg', opt?.value ?? 'all')}
                           isSearchable
                           placeholder="Pilih Cabang"
-                          classNamePrefix="react-select"
                         />
                       </div>
                       <div className="flex flex-col">
-                        <label className="text-sm font-medium text-gray-700 mb-1">Segmen</label>
+                        <label className="text-sm font-medium text-foreground mb-1">Segmen</label>
                         <Select value={filters.segmen} onValueChange={(value: string) => handleFilterChange('segmen', value)}>
                           <SelectTrigger className="w-[200px]">
                             <SelectValue>
@@ -190,8 +206,16 @@ export default function DashboardPage() {
                   </div>
                   {/* Tabel Peringkat */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                    <TopMerchantsTable />
-                    <TopBranchesTable />
+                    <TopMerchantsTable data={filteredMerchants} />
+                    <TopBranchesTable data={filteredMerchants} />
+                  </div>
+                  {/* Chart Leaderboard Baru */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                    <TopLOBByMDFGChart />
+                    <TopLOBBySVChart />
+                  </div>
+                  <div className="mt-6">
+                    <TopMerchantsMDFGChart />
                   </div>
                   {/* Chart Distribusi */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">

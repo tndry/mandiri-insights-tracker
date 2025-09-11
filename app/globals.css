@@ -48,7 +48,7 @@
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
+  --background: oklch(0.97 0.02 240);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
@@ -97,8 +97,26 @@
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
+  --border: oklch(0.2 0 0 / 40%);
+  --input: oklch(0.2 0 0 / 60%);
+/* Leaflet dark mode overrides */
+.dark .leaflet-control-zoom a {
+  background-color: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+  border-color: hsl(var(--border));
+}
+.dark .leaflet-control-zoom a:hover {
+  background-color: hsl(var(--accent));
+}
+.dark .leaflet-popup-content-wrapper,
+.dark .leaflet-popup-tip {
+  background-color: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+  box-shadow: 0 3px 14px rgba(0,0,0,0.4);
+}
+.dark .leaflet-tile {
+  filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
+}
   --ring: oklch(0.556 0 0);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
@@ -120,8 +138,7 @@
     @apply border-border outline-ring/50;
   }
     body {
-      background-color: hsl(210 40% 98%);
-      color: #222e3a;
+      @apply bg-background;
       font-family: 'Inter', var(--font-geist-sans), var(--font-sans), sans-serif;
     }
   }

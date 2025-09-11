@@ -108,10 +108,71 @@ export const calculateStats = (data: MerchantData[]): MerchantStats => {
       svTrend: [],
       segmentDistribution: {},
       edcByBranch: {},
+      topMerchantsBySV: [],
+      topBranchesByTrx: [],
+      topMerchantsByMDFG: [],
+      topLOBsByMDFG: [],
+      topLOBsBySV: [],
+      ytd: {
+        merchants: { '2024': 0, '2025': 0 },
+        trx: { '2024': 0, '2025': 0 },
+        sv: { '2024': 0, '2025': 0 },
+        edc: { '2024': 0, '2025': 0 },
+      },
     };
   }
   // Deteksi semua nama kolom dari baris data pertama
   const allKeys = Object.keys(data[0]);
+
+  // --- Leaderboard MDFG & SV ---
+  // Siapkan sortedSvWeekKeys lebih awal
+  const svWeekRegex = /^sv w(\d+)/;
+  const sortedSvWeekKeys = allKeys
+    .filter(key => svWeekRegex.test(key))
+    .sort((a, b) => {
+      const weekA = parseInt(a.match(svWeekRegex)![1], 10);
+      const weekB = parseInt(b.match(svWeekRegex)![1], 10);
+      return weekA - weekB;
+    });
+
+  // 1. Top 5 Merchant by total MDFG (akumulasi semua kolom mdfg w...)
+  const mdfgWeekRegex = /^mdfg w(\d+)/;
+  const sortedMdfgWeekKeys = allKeys
+    .filter(key => mdfgWeekRegex.test(key))
+    .sort((a, b) => {
+      const weekA = parseInt(a.match(mdfgWeekRegex)![1], 10);
+      const weekB = parseInt(b.match(mdfgWeekRegex)![1], 10);
+      return weekA - weekB;
+    });
+  const merchantMDFGs = data.map(m => {
+    const mdfgTotal = sortedMdfgWeekKeys.reduce((sum, key) => sum + (m[key as keyof MerchantData] as number || 0), 0);
+    return { name: m.merchantofficialname || m.commonname || '-', mdfg: mdfgTotal };
+  });
+  const topMerchantsByMDFG = merchantMDFGs.sort((a, b) => b.mdfg - a.mdfg).slice(0, 5);
+
+  // 2. Top 5 LOB by total MDFG
+  const lobMDFGMap: Record<string, number> = {};
+  data.forEach(m => {
+    const lob = m.lobdesc || m.LOB || '-';
+    const mdfgTotal = sortedMdfgWeekKeys.reduce((sum, key) => sum + (m[key as keyof MerchantData] as number || 0), 0);
+    lobMDFGMap[lob] = (lobMDFGMap[lob] || 0) + mdfgTotal;
+  });
+  const topLOBsByMDFG = Object.entries(lobMDFGMap)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 5);
+
+  // 3. Top 5 LOB by total SV (4 minggu terakhir)
+  const lobSVMap: Record<string, number> = {};
+  data.forEach(m => {
+    const lob = m.lobdesc || m.LOB || '-';
+    const svTotal = sortedSvWeekKeys.slice(-4).reduce((sum, key) => sum + (m[key as keyof MerchantData] as number || 0), 0);
+    lobSVMap[lob] = (lobSVMap[lob] || 0) + svTotal;
+  });
+  const topLOBsBySV = Object.entries(lobSVMap)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 5);
 
   // Filter dan urutkan kolom-kolom transaksi mingguan
   const trxWeekRegex = /^trx w(\d+)/;
@@ -122,14 +183,7 @@ export const calculateStats = (data: MerchantData[]): MerchantStats => {
       const weekB = parseInt(b.match(trxWeekRegex)![1], 10);
       return weekA - weekB;
     });
-  const svWeekRegex = /^sv w(\d+)/;
-  const sortedSvWeekKeys = allKeys
-    .filter(key => svWeekRegex.test(key))
-    .sort((a, b) =>{
-      const weekA = parseInt(a.match(svWeekRegex)![1], 10);
-      const weekB = parseInt(b.match(svWeekRegex)![1], 10);
-      return weekA - weekB;
-    });
+  // svWeekRegex & sortedSvWeekKeys sudah dideklarasikan di atas
 
   const ytdYearRegex = /ytd (?:trx|sv) w\d+ (\d+)/;
   const yearsInData = new Set<string>();
@@ -280,6 +334,10 @@ export const calculateStats = (data: MerchantData[]): MerchantStats => {
     edcByBranch,
     topMerchantsBySV,
     topBranchesByTrx,
+    // --- Leaderboard MDFG & SV ---
+    topMerchantsByMDFG,
+    topLOBsByMDFG,
+    topLOBsBySV,
     ytd: {
       merchants: { '2024': 0, '2025': 0 },
       trx: { '2024': 0, '2025': 0 },

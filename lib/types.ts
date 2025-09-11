@@ -14,10 +14,10 @@
     LOB: string;
     "open date": string;
     "tgl pasang edc": string;
-  "jml edc": number;
-  cd_cbg: string;
-  cbg: string;
-  area: string;
+    "jml edc": number;
+    cd_cbg: string;
+    cbg: string;
+    area: string;
     "kd cb rek": string;
     "nama cabang rek": string;
     "area rek": string;
@@ -87,6 +87,10 @@ export interface MerchantStats {
   // Leaderboard
   topMerchantsBySV: Array<{ name: string; sv: number }>;
   topBranchesByTrx: Array<{ branch: string; trx: number }>;
+  // New Leaderboard for MDFG and SV by Merchant/LOB
+  topMerchantsByMDFG: Array<{ name: string; mdfg: number }>;
+  topLOBsByMDFG: Array<{ name: string; value: number }>;
+  topLOBsBySV: Array<{ name: string; value: number }>;
   // Raw YtD values for 2024 and 2025
   ytd: {
     merchants: { '2024': number; '2025': number };

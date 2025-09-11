@@ -127,7 +127,7 @@ export function CSVUpload() {
         ) : (
           <>
             <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-lg font-medium text-gray-900 mb-2">Drop CSV File Here</p>
+            <p className="text-lg font-medium text-muted-foreground mb-2">Drop CSV File Here</p>
             <input ref={fileInputRef} type="file" accept=".csv" onChange={handleFileSelect} className="hidden" />
             <Button onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
               Choose File
@@ -147,9 +147,9 @@ export function CSVUpload() {
       <div className="mt-6">
         <Accordion type="single" collapsible>
           <AccordionItem value="required-columns">
-            <AccordionTrigger>Lihat Kolom CSV yang Dibutuhkan</AccordionTrigger>
+            <AccordionTrigger className="text-foreground">Lihat Kolom CSV yang Dibutuhkan</AccordionTrigger>
             <AccordionContent>
-              <div className="grid grid-cols-2 gap-1 text-xs text-gray-700">
+              <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground">
                 <span>• mid_new</span>
                 <span>• merchantofficialname</span>
                 <span>• alamat</span>
