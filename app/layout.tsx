@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { MerchantProvider } from '@/contexts/merchant-context';
+import { ProductDataProvider } from '@/contexts/product-data-context';
 import { ThemeProvider } from '@/components/theme-provider';
 
 const inter = Inter({
@@ -28,9 +29,11 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning={true}>
       <body className={`${inter.className} antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <MerchantProvider>
-            {children}
-          </MerchantProvider>
+          <ProductDataProvider>
+            <MerchantProvider>
+              {children}
+            </MerchantProvider>
+          </ProductDataProvider>
         </ThemeProvider>
       </body>
     </html>

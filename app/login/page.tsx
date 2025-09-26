@@ -89,7 +89,7 @@ export default function LoginPage() {
           </form>
           <div className="mt-6 text-sm text-gray-600">
             <p className="font-semibold">Demo Credentials:</p>
-            <p>Admin: admin / admin123</p>
+            <p>Admin: mandiri@gmail.com / mandiri123</p>
             <p>Field Worker: fieldworker / field123</p>
           </div>
         </CardContent>

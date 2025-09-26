@@ -138,7 +138,7 @@ export function TransactionTrendChart() {
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--grid-color)" />
               <XAxis dataKey="week" />
               <YAxis />
               <Tooltip formatter={(value: number) => [value, "Transactions"]} />
@@ -180,7 +180,7 @@ export function SalesVolumeTrendChart() {
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--grid-color)" />
               <XAxis dataKey="week" />
               <YAxis tickFormatter={(value: number) => `Rp${(value / 1000000).toFixed(1)}M`} />
               <Tooltip formatter={(value: number) => `Rp${value.toLocaleString()}`} />

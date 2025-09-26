@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend, PieLabelRenderProps } from "recharts";
+// ...existing code...
 import { useMerchants } from "@/contexts/merchant-context";
 
 const COLORS = ["#005b9f", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
@@ -41,18 +42,26 @@ export function TopLOBByMDFGChart() {
                 cx="50%"
                 cy="50%"
                 outerRadius={65}
+                labelLine={false}
                 label={(props: any) => {
+                  const cx = typeof props.cx === 'number' ? props.cx : 0;
+                  const cy = typeof props.cy === 'number' ? props.cy : 0;
+                  const midAngle = typeof props.midAngle === 'number' ? props.midAngle : 0;
+                  const outerRadius = typeof props.outerRadius === 'number' ? props.outerRadius : 0;
                   const percent = typeof props.percent === 'number' ? props.percent : 0;
+                  const radius = outerRadius + 10;
+                  const x = cx + radius * Math.cos(-midAngle * Math.PI / 180);
+                  const y = cy + radius * Math.sin(-midAngle * Math.PI / 180);
                   return (
                     <text
-                      x={props.cx}
-                      y={props.cy}
-                      textAnchor="middle"
-                      dominantBaseline="central"
+                      x={x}
+                      y={y}
                       fill="#333"
+                      textAnchor={x > cx ? 'start' : 'end'}
+                      dominantBaseline="central"
                       fontSize={14}
                     >
-                      {`${Math.round(percent * 100)}%`}
+                      {`${(percent * 100).toFixed(0)}%`}
                     </text>
                   );
                 }}
@@ -62,7 +71,6 @@ export function TopLOBByMDFGChart() {
                 ))}
               </Pie>
               <Tooltip formatter={(value: number, name: string) => [`${value}`, name]} />
-              <Legend align="center" verticalAlign="bottom" />
             </PieChart>
           </ResponsiveContainer>
         </div>
@@ -106,18 +114,26 @@ export function TopLOBBySVChart() {
                 cx="50%"
                 cy="50%"
                 outerRadius={65}
+                labelLine={false}
                 label={(props: any) => {
+                  const cx = typeof props.cx === 'number' ? props.cx : 0;
+                  const cy = typeof props.cy === 'number' ? props.cy : 0;
+                  const midAngle = typeof props.midAngle === 'number' ? props.midAngle : 0;
+                  const outerRadius = typeof props.outerRadius === 'number' ? props.outerRadius : 0;
                   const percent = typeof props.percent === 'number' ? props.percent : 0;
+                  const radius = outerRadius + 10;
+                  const x = cx + radius * Math.cos(-midAngle * Math.PI / 180);
+                  const y = cy + radius * Math.sin(-midAngle * Math.PI / 180);
                   return (
                     <text
-                      x={props.cx}
-                      y={props.cy}
-                      textAnchor="middle"
-                      dominantBaseline="central"
+                      x={x}
+                      y={y}
                       fill="#333"
+                      textAnchor={x > cx ? 'start' : 'end'}
+                      dominantBaseline="central"
                       fontSize={14}
                     >
-                      {`${Math.round(percent * 100)}%`}
+                      {`${(percent * 100).toFixed(0)}%`}
                     </text>
                   );
                 }}
@@ -127,7 +143,6 @@ export function TopLOBBySVChart() {
                 ))}
               </Pie>
               <Tooltip formatter={(value: number, name: string) => [`${value}`, name]} />
-              <Legend align="center" verticalAlign="bottom" />
             </PieChart>
           </ResponsiveContainer>
         </div>

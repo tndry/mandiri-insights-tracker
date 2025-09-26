@@ -1,3 +1,10 @@
+:root {
+  --grid-color: #E0E0E0;
+}
+
+[data-theme='dark'] {
+  --grid-color: #2E2E2E;
+}
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "leaflet/dist/leaflet.css";

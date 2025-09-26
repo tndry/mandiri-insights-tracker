@@ -14,7 +14,7 @@ import { TopMerchantsMDFGChart } from "@/components/top-merchants-mdfg-chart"
 import { TopLOBByMDFGChart, TopLOBBySVChart } from "@/components/top-lob-charts"
 import { ExportReports } from "@/components/export-reports"
 import { useMerchants } from "@/contexts/merchant-context"
-import { useMemo, useState } from "react"
+import { useMemo, useState, useEffect } from "react"
 import { KPICard } from "@/components/kpi-card"
 import { UserNav } from "@/components/user-nav"
 import { TopMerchantsTable } from "@/components/top-merchants-table"
@@ -23,26 +23,56 @@ import { MobileNav } from "@/components/mobile-nav"
 import { FilterSheet } from "@/components/filter-sheet"
 import { ThemedReactSelect } from "@/components/ui/themed-react-select"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
+import { DynamicUploader } from "@/components/dynamic-uploader"
+import { ProductKPICard } from "@/components/product-kpi-card"
+import { useProductData } from "@/contexts/product-data-context"
+import ProductPerformanceSection from "@/components/product-performance-section"
 
 export default function DashboardPage() {
   const { user, logout, checkPermission } = useAuth()
   const { stats, merchants, filters, setFilters, filteredMerchants } = useMerchants();
+  const { processedData } = useProductData();
+
+  const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
+
+  const availableMonths = useMemo(() => {
+    const monthOrder = ["JAN", "FEB", "MAR", "APR", "MEI", "JUN", "JUL", "AGU", "SEP", "OKT", "NOV", "DES"];
+    const months = new Set<string>();
+    if (processedData.length > 0 && processedData[0].data.length > 0) {
+      const sampleData = processedData[0].data[0];
+      for (const key in sampleData) {
+        const month = key.split('_')[0];
+        if (monthOrder.includes(month.toUpperCase())) {
+          months.add(month.toUpperCase());
+        }
+      }
+    }
+    const sortedMonths = Array.from(months).sort((a, b) => monthOrder.indexOf(a) - monthOrder.indexOf(b));
+    const options = [{ value: 'all', label: 'Semua Bulan' }, ...sortedMonths.map(m => ({ value: m, label: m }))];
+    return options;
+  }, [processedData]);
+
+  useEffect(() => {
+    if (availableMonths.length > 0 && !selectedMonth) {
+      setSelectedMonth(availableMonths[0].value);
+    }
+  }, [availableMonths]);
   // Helper for KPI comparison text
   const formatComparisonText = (current: number, prev: number, label: string) => {
     return `${label} ${prev.toLocaleString()} → ${current.toLocaleString()} (YoY)`;
   };
 
   const MerchantMap = dynamic(
-  () => import('@/components/merchant-map').then((mod) => mod.MerchantMap),
-  { 
-    ssr: false, // Ini bagian terpenting: menonaktifkan Server-Side Rendering
-    loading: () => (
-      <div className="h-96 w-full bg-gray-100 rounded-lg flex items-center justify-center">
-        <p className="text-gray-500">Loading map...</p>
-      </div>
-    )
-  }
-)
+    () => import('@/components/merchant-map').then((mod) => mod.MerchantMap),
+    { 
+      ssr: false, // Ini bagian terpenting: menonaktifkan Server-Side Rendering
+      loading: () => (
+        <div className="h-96 w-full bg-gray-100 rounded-lg flex items-center justify-center">
+          <p className="text-gray-500">Loading map...</p>
+        </div>
+      )
+    }
+  )
 
   const cbgOptions = useMemo(() => {
     // Buat array objek { value: cd_cbg, label: cbg }, pastikan unik dan terurut, abaikan value kosong/0
@@ -72,6 +102,7 @@ export default function DashboardPage() {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
   const [activeTab, setActiveTab] = useState("overview");
+
   return (
     <AuthGuard>
   <div className="min-h-screen">
@@ -102,11 +133,46 @@ export default function DashboardPage() {
           {/* ...existing code... */}
           {/* Tabs & Content */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="hidden md:grid w-full grid-cols-4">
+            <TabsList className="hidden md:grid w-full grid-cols-5">
               <TabsTrigger value="overview">Overview & Map</TabsTrigger>
               {checkPermission("upload") && <TabsTrigger value="upload">Upload Data</TabsTrigger>}
               {checkPermission("export") && <TabsTrigger value="reports">Reports</TabsTrigger>}
+              <TabsTrigger value="products">Product Performance</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="products" className="space-y-6">
+              <DynamicUploader />
+              {processedData.length > 0 && (
+                <div className="mt-8">
+                  {/* Filter Bulan */}
+                  <div className="flex items-center gap-4 p-4 bg-card rounded-lg shadow-sm border mb-6">
+                    <label className="text-sm font-medium whitespace-nowrap">Pilih Bulan untuk KPI</label>
+                    <div className="max-w-[160px] min-w-0 w-full">
+                      <ThemedReactSelect
+                        options={availableMonths}
+                        value={availableMonths.find(opt => opt.value === selectedMonth) || null}
+                        onChange={opt => setSelectedMonth(opt?.value || 'all')}
+                        isSearchable
+                        placeholder="Pilih Bulan"
+                        classNamePrefix="react-select"
+                        className="w-full min-w-[120px] max-w-[160px]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* KPI Cards Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {processedData.map((product) => (
+                      <ProductKPICard 
+                        key={product.productName}
+                        product={product} 
+                        selectedMonth={selectedMonth || availableMonths[0]?.value || "all"} // Pastikan string
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </TabsContent>
 
             <TabsContent value="overview" className="space-y-6">
               {merchants.length === 0 ? (
@@ -259,6 +325,8 @@ export default function DashboardPage() {
           </Tabs>
         </main>
       </div>
+
     </AuthGuard>
   )
 }
+

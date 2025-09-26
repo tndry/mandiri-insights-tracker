@@ -1,3 +1,25 @@
+// Untuk context ProductData
+export type ProductDataContextType = {
+  productFiles: UploadedProductFile[];
+  addProductFileSlot: () => void;
+  removeProductFile: (id: number) => void;
+  updateProductFileName: (id: number, name: string) => void;
+  updateProductFileObject: (id: number, file: File) => void;
+  processedData: ProcessedProduct[];
+  processFiles: () => Promise<void>;
+  isProcessing: boolean;
+};
+// Untuk hasil parsing produk
+export interface ProcessedProduct {
+  productName: string;
+  data: any[];
+}
+// Untuk fitur Product Performance Dashboard
+export interface UploadedProductFile {
+  id: number;
+  productName: string;
+  file: File | null;
+}
   export interface MerchantData {
     mid_new: string;
     merchantofficialname: string;

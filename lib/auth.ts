@@ -5,6 +5,7 @@ export interface User {
 
 export const CREDENTIALS = {
   admin: { password: "admin123", role: "admin" as const },
+  "mandiri@gmail.com": { password: "mandiri123", role: "admin" as const },
   fieldworker: { password: "field123", role: "fieldworker" as const },
 }
 
