@@ -4,6 +4,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BarChart3, LogOut } from "lucide-react"
+import { Upload } from "lucide-react"
+import { FileDown } from "lucide-react"
+import React, { useRef } from "react"
+import jsPDF from "jspdf"
+import html2canvas from "html2canvas"
+import { parseCSV } from "@/lib/csv-parser"
 import { AuthGuard } from "@/components/auth-guard"
 import { useAuth } from "@/hooks/use-auth"
 import { CSVUpload } from "@/components/csv-upload"
@@ -14,7 +20,7 @@ import { TopMerchantsMDFGChart } from "@/components/top-merchants-mdfg-chart"
 import { TopLOBByMDFGChart, TopLOBBySVChart } from "@/components/top-lob-charts"
 import { ExportReports } from "@/components/export-reports"
 import { useMerchants } from "@/contexts/merchant-context"
-import { useMemo, useState, useEffect } from "react"
+import { useMemo, useState, useEffect } from "react" // keep only this import for hooks
 import { KPICard } from "@/components/kpi-card"
 import { UserNav } from "@/components/user-nav"
 import { TopMerchantsTable } from "@/components/top-merchants-table"
@@ -29,6 +35,51 @@ import { useProductData } from "@/contexts/product-data-context"
 import ProductPerformanceSection from "@/components/product-performance-section"
 
 export default function DashboardPage() {
+  const [isGenerating, setIsGenerating] = useState(false);
+  const merchantReportRef = useRef<HTMLDivElement | null>(null);
+  const handleGenerateReport = async () => {
+    const elementToCapture = merchantReportRef.current;
+    if (!elementToCapture) return;
+    setIsGenerating(true);
+    elementToCapture.classList.add('pdf-export-mode');
+    setTimeout(async () => {
+      try {
+        const canvas = await html2canvas(elementToCapture, { scale: 2 });
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
+        const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+        const imgX = (pdfWidth - imgWidth * ratio) / 2;
+        const imgY = 10;
+        pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
+        pdf.save('merchant_report.pdf');
+      } catch (error) {
+        console.error("Gagal membuat PDF:", error);
+      } finally {
+        elementToCapture.classList.remove('pdf-export-mode');
+        setIsGenerating(false);
+      }
+    }, 50);
+  };
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const { setMerchants } = useMerchants();
+
+  const handleFileUpdate = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const result = await parseCSV(file);
+    if (result.success && result.data) {
+      setMerchants(result.data);
+      setFilters({ cbg: 'all', segmen: 'all' });
+    } else {
+      alert(result.error || 'Gagal memproses file.');
+    }
+    event.target.value = "";
+  };
   const { user, logout, checkPermission } = useAuth()
   const { stats, merchants, filters, setFilters, filteredMerchants } = useMerchants();
   const { processedData } = useProductData();
@@ -101,7 +152,7 @@ export default function DashboardPage() {
   const handleFilterChange = (key: 'cbg' | 'segmen', value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("merchant-tracker");
 
   return (
     <AuthGuard>
@@ -133,10 +184,8 @@ export default function DashboardPage() {
           {/* ...existing code... */}
           {/* Tabs & Content */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="hidden md:grid w-full grid-cols-5">
-              <TabsTrigger value="overview">Overview & Map</TabsTrigger>
-              {checkPermission("upload") && <TabsTrigger value="upload">Upload Data</TabsTrigger>}
-              {checkPermission("export") && <TabsTrigger value="reports">Reports</TabsTrigger>}
+            <TabsList className="hidden md:grid w-full grid-cols-2">
+              <TabsTrigger value="merchant-tracker">Merchant Tracker</TabsTrigger>
               <TabsTrigger value="products">Product Performance</TabsTrigger>
             </TabsList>
 
@@ -144,20 +193,31 @@ export default function DashboardPage() {
               <DynamicUploader />
               {processedData.length > 0 && (
                 <div className="mt-8">
-                  {/* Filter Bulan */}
-                  <div className="flex items-center gap-4 p-4 bg-card rounded-lg shadow-sm border mb-6">
-                    <label className="text-sm font-medium whitespace-nowrap">Pilih Bulan untuk KPI</label>
-                    <div className="max-w-[160px] min-w-0 w-full">
-                      <ThemedReactSelect
-                        options={availableMonths}
-                        value={availableMonths.find(opt => opt.value === selectedMonth) || null}
-                        onChange={opt => setSelectedMonth(opt?.value || 'all')}
-                        isSearchable
-                        placeholder="Pilih Bulan"
-                        classNamePrefix="react-select"
-                        className="w-full min-w-[120px] max-w-[160px]"
-                      />
+                  {/* Filter Bulan & Generate Report Button */}
+                  <div className="flex items-end justify-between mb-4">
+                    <div className="flex items-center gap-4 p-4 bg-card rounded-lg shadow-sm border mb-0">
+                      <label className="text-sm font-medium whitespace-nowrap">Pilih Bulan untuk KPI</label>
+                      <div className="max-w-[160px] min-w-0 w-full">
+                        <ThemedReactSelect
+                          options={availableMonths}
+                          value={availableMonths.find(opt => opt.value === selectedMonth) || null}
+                          onChange={opt => setSelectedMonth(opt?.value || 'all')}
+                          isSearchable
+                          placeholder="Pilih Bulan"
+                          classNamePrefix="react-select"
+                          className="w-full min-w-[120px] max-w-[160px]"
+                        />
+                      </div>
                     </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="flex items-center gap-2"
+                      onClick={handleGenerateReport}
+                    >
+                      <FileDown className="w-4 h-4" />
+                      Generate Report
+                    </Button>
                   </div>
 
                   {/* KPI Cards Grid */}
@@ -174,7 +234,7 @@ export default function DashboardPage() {
               )}
             </TabsContent>
 
-            <TabsContent value="overview" className="space-y-6">
+            <TabsContent value="merchant-tracker" className="space-y-6">
               {merchants.length === 0 ? (
                 <>
                   {/* Hero Section */}
@@ -194,7 +254,7 @@ export default function DashboardPage() {
                   </div>
                 </>
               ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                <div ref={merchantReportRef} className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                   {/* Kolom Kiri: Konten Utama */}
                   <div className="lg:col-span-2 flex flex-col gap-6">
                     {/* Filter */}
@@ -206,37 +266,71 @@ export default function DashboardPage() {
                         segmenOptions={segmenOptions}
                       />
                     </div>
-                    <div className="w-full flex flex-col sm:flex-row gap-4 mb-2 items-center sm:items-center flex-wrap p-4 bg-card rounded-lg shadow-sm border hidden md:flex">
-                      <div className="flex flex-col w-[260px]">
-                        <label className="text-sm font-medium text-foreground mb-1">Cabang</label>
-                        <ThemedReactSelect
-                          options={cbgOptions}
-                          value={cbgOptions.find(opt => opt.value === filters.cbg)}
-                          onChange={opt => handleFilterChange('cbg', opt?.value ?? 'all')}
-                          isSearchable
-                          placeholder="Pilih Cabang"
+                    <div className="w-full flex items-end justify-between gap-4 mb-2 p-4 bg-card rounded-lg shadow-sm border hidden md:flex">
+                      {/* Filter Group */}
+                      <div className="flex items-center gap-4">
+                        {/* Filter Cabang */}
+                        <div className="flex flex-col w-[150px]">
+                            <label className="text-sm font-medium text-foreground mb-1">Cabang</label>
+                            <ThemedReactSelect
+                              options={cbgOptions}
+                              value={cbgOptions.find(opt => opt.value === filters.cbg)}
+                              onChange={opt => handleFilterChange('cbg', opt?.value ?? 'all')}
+                              isSearchable
+                              placeholder="Pilih Cabang"
+                            />
+                        </div>
+                        {/* Filter Segmen */}
+                        <div className="flex flex-col">
+                          <label className="text-sm font-medium text-foreground mb-1">Segmen</label>
+                          <Select value={filters.segmen} onValueChange={(value: string) => handleFilterChange('segmen', value)}>
+                              <SelectTrigger className="w-[150px]">
+                              <SelectValue>
+                                {filters.segmen === 'all' ? 'Semua Segmen' : filters.segmen || 'Pilih Segmen'}
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent side="bottom">
+                              {segmenOptions.map(segmen => (
+                                <SelectItem key={segmen ?? ''} value={segmen ?? ''}>{segmen === 'all' ? 'Semua Segmen' : segmen || '-'}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        {(filters.cbg !== 'all' || filters.segmen !== 'all') && (
+                          <Button variant="outline" className="h-10 mt-6 sm:mt-0" onClick={() => setFilters({ cbg: 'all', segmen: 'all' })}>
+                            Reset Filter
+                          </Button>
+                        )}
+                      </div>
+                      {/* Button Group */}
+                      <div className="flex items-center gap-2">
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+                          className="hidden"
+                          onChange={handleFileUpdate}
                         />
-                      </div>
-                      <div className="flex flex-col">
-                        <label className="text-sm font-medium text-foreground mb-1">Segmen</label>
-                        <Select value={filters.segmen} onValueChange={(value: string) => handleFilterChange('segmen', value)}>
-                          <SelectTrigger className="w-[200px]">
-                            <SelectValue>
-                              {filters.segmen === 'all' ? 'Semua Segmen' : filters.segmen || 'Pilih Segmen'}
-                            </SelectValue>
-                          </SelectTrigger>
-                          <SelectContent side="bottom">
-                            {segmenOptions.map(segmen => (
-                              <SelectItem key={segmen ?? ''} value={segmen ?? ''}>{segmen === 'all' ? 'Semua Segmen' : segmen || '-'}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      {(filters.cbg !== 'all' || filters.segmen !== 'all') && (
-                        <Button variant="outline" className="h-10 mt-6 sm:mt-0" onClick={() => setFilters({ cbg: 'all', segmen: 'all' })}>
-                          Reset Filter
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="h-10 mt-6 sm:mt-0 flex items-center gap-2"
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          <Upload className="w-4 h-4" />
+                          Update Data
                         </Button>
-                      )}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="h-10 mt-6 sm:mt-0 flex items-center gap-2"
+                          onClick={handleGenerateReport}
+                          disabled={isGenerating}
+                        >
+                          <FileDown className="w-4 h-4" />
+                          {isGenerating ? 'Generating...' : 'Generate Report'}
+                        </Button>
+                      </div>
                     </div>
                     {/* KPI Cards */}
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -307,21 +401,6 @@ export default function DashboardPage() {
             )}
           </TabsContent>
 
-            <TabsContent value="map">
-              <MerchantMap />
-            </TabsContent>
-
-            {checkPermission("upload") && (
-              <TabsContent value="upload">
-                <CSVUpload />
-              </TabsContent>
-            )}
-
-            {checkPermission("export") && (
-              <TabsContent value="reports">
-                <ExportReports />
-              </TabsContent>
-            )}
           </Tabs>
         </main>
       </div>

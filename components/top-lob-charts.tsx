@@ -56,7 +56,7 @@ export function TopLOBByMDFGChart() {
                     <text
                       x={x}
                       y={y}
-                      fill="#333"
+                      fill="var(--pie-label-color)"
                       textAnchor={x > cx ? 'start' : 'end'}
                       dominantBaseline="central"
                       fontSize={14}
@@ -128,7 +128,7 @@ export function TopLOBBySVChart() {
                     <text
                       x={x}
                       y={y}
-                      fill="#333"
+                      fill="var(--pie-label-color)"
                       textAnchor={x > cx ? 'start' : 'end'}
                       dominantBaseline="central"
                       fontSize={14}

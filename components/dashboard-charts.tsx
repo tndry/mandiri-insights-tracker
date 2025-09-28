@@ -48,16 +48,45 @@ export function SegmentDistribution() {
         <CardTitle className="flex items-center gap-2"><Users className="w-5 h-5" /> Merchant Segments</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-72">
+        <div className="h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-              <Pie data={chartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ percent }: { percent: number }) => `${(percent * 100).toFixed(0)}%`}>
+              <Pie
+                data={chartData}
+                dataKey="value"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                outerRadius={80}
+                labelLine={false}
+                label={(props: any) => {
+                  const cx = typeof props.cx === 'number' ? props.cx : 0;
+                  const cy = typeof props.cy === 'number' ? props.cy : 0;
+                  const midAngle = typeof props.midAngle === 'number' ? props.midAngle : 0;
+                  const outerRadius = typeof props.outerRadius === 'number' ? props.outerRadius : 0;
+                  const percent = typeof props.percent === 'number' ? props.percent : 0;
+                  const radius = outerRadius + 10;
+                  const x = cx + radius * Math.cos(-midAngle * Math.PI / 180);
+                  const y = cy + radius * Math.sin(-midAngle * Math.PI / 180);
+                  return (
+                    <text
+                      x={x}
+                      y={y}
+                      fill="var(--pie-label-color)"
+                      textAnchor={x > cx ? 'start' : 'end'}
+                      dominantBaseline="central"
+                      fontSize={14}
+                    >
+                      {`${(percent * 100).toFixed(0)}%`}
+                    </text>
+                  );
+                }}
+              >
                 {chartData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
               <Tooltip formatter={(value: number, name: string) => [`${value} merchants`, name]} />
-              <Legend />
             </PieChart>
           </ResponsiveContainer>
         </div>

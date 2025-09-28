@@ -1,4 +1,11 @@
 :root {
+  --pie-label-color: #333;
+}
+
+.dark {
+  --pie-label-color: #fff;
+}
+:root {
   --grid-color: #E0E0E0;
 }
 
@@ -55,57 +62,57 @@
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(0.97 0.02 240);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --background: hsl(240, 20%, 94%);
+  --foreground: hsl(0, 0%, 14.5%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(0, 0%, 14.5%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(0, 0%, 14.5%);
+  --primary: hsl(0, 0%, 20.5%);
+  --primary-foreground: hsl(0, 0%, 98.5%);
+  --secondary: hsl(0, 0%, 97%);
+  --secondary-foreground: hsl(0, 0%, 20.5%);
+  --muted: hsl(0, 0%, 97%);
+  --muted-foreground: hsl(0, 0%, 55.6%);
+  --accent: hsl(0, 0%, 97%);
+  --accent-foreground: hsl(0, 0%, 20.5%);
+  --destructive: hsl(27, 24.5%, 57.7%);
+  --border: hsl(0, 0%, 92.2%);
+  --input: hsl(0, 0%, 92.2%);
+  --ring: hsl(0, 0%, 70.8%);
+  --chart-1: hsl(41, 22.2%, 64.6%);
+  --chart-2: hsl(184, 11.8%, 60%);
+  --chart-3: hsl(227, 7%, 39.8%);
+  --chart-4: hsl(84, 18.9%, 82.8%);
+  --chart-5: hsl(70, 18.8%, 76.9%);
+  --sidebar: hsl(0, 0%, 98.5%);
+  --sidebar-foreground: hsl(0, 0%, 14.5%);
+  --sidebar-primary: hsl(0, 0%, 20.5%);
+  --sidebar-primary-foreground: hsl(0, 0%, 98.5%);
+  --sidebar-accent: hsl(0, 0%, 97%);
+  --sidebar-accent-foreground: hsl(0, 0%, 20.5%);
+  --sidebar-border: hsl(0, 0%, 92.2%);
+  --sidebar-ring: hsl(0, 0%, 70.8%);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(0.2 0 0 / 40%);
-  --input: oklch(0.2 0 0 / 60%);
+  --background: hsl(0, 0%, 14.5%);
+  --foreground: hsl(0, 0%, 98.5%);
+  --card: hsl(0, 0%, 20.5%);
+  --card-foreground: hsl(0, 0%, 98.5%);
+  --popover: hsl(0, 0%, 20.5%);
+  --popover-foreground: hsl(0, 0%, 98.5%);
+  --primary: hsl(0, 0%, 92.2%);
+  --primary-foreground: hsl(0, 0%, 20.5%);
+  --secondary: hsl(0, 0%, 26.9%);
+  --secondary-foreground: hsl(0, 0%, 98.5%);
+  --muted: hsl(0, 0%, 26.9%);
+  --muted-foreground: hsl(0, 0%, 70.8%);
+  --accent: hsl(0, 0%, 26.9%);
+  --accent-foreground: hsl(0, 0%, 98.5%);
+  --destructive: hsl(22, 19.1%, 70.4%);
+  --border: hsl(0, 0%, 20% / 40%);
+  --input: hsl(0, 0%, 20% / 60%);
 /* Leaflet dark mode overrides */
 .dark .leaflet-control-zoom a {
   background-color: hsl(var(--card));
@@ -139,6 +146,28 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
 }
+
+/* PDF Export Compatibility CSS (Versi 2) */
+.pdf-export-mode {
+  /* Paksa semua latar belakang menjadi warna solid yang aman */
+  background-color: #09090b !important;
+}
+.pdf-export-mode [class*="bg-"],
+.pdf-export-mode [class*="bg-card"] {
+  background-color: #09090b !important;
+}
+
+/* Paksa semua warna teks menjadi warna solid yang aman */
+.pdf-export-mode [class*="text-"] {
+  color: #fafafa !important;
+}
+
+/* Khusus untuk chart Recharts agar terlihat */
+.pdf-export-mode .recharts-surface,
+.pdf-export-mode .recharts-wrapper {
+    background-color: transparent !important;
+}
+
 
 @layer base {
   * {
