@@ -16,6 +16,7 @@ import { CSVUpload } from "@/components/csv-upload"
 // import { MerchantMap } from "@/components/merchant-map"
 import dynamic from 'next/dynamic'
 import { SegmentDistribution, EDCByBranch, TransactionTrendChart, SalesVolumeTrendChart } from "@/components/dashboard-charts"
+import { BarChart, XAxis, YAxis, Tooltip, Bar, ResponsiveContainer } from 'recharts';
 import { TopMerchantsMDFGChart } from "@/components/top-merchants-mdfg-chart"
 import { TopLOBByMDFGChart, TopLOBBySVChart } from "@/components/top-lob-charts"
 import { ExportReports } from "@/components/export-reports"
@@ -161,14 +162,23 @@ export default function DashboardPage() {
   <header className="sticky top-0 z-20 bg-card shadow-sm border-b">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="flex justify-between items-center h-16">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <MobileNav className="md:hidden" setActiveTab={setActiveTab} />
+          <Image
+            src="/logo-mandiri.png"
+            alt="Bank Mandiri Logo"
+            height={24}
+            width={80}
+            className="h-6 w-auto"
+            priority
+          />
+          <div className="h-6 w-px bg-slate-400 mx-2"></div>
           <Image
             src="/logo-mit.png"
             alt="m.it Logo"
-            width={220}
-            height={60}
-            className="h-15 w-auto"
+            width={180}
+            height={48}
+            className="h-12 w-auto"
             priority
           />
         </div>
@@ -186,10 +196,10 @@ export default function DashboardPage() {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="hidden md:grid w-full grid-cols-2">
               <TabsTrigger value="merchant-tracker">Merchant Tracker</TabsTrigger>
-              <TabsTrigger value="products">Product Performance</TabsTrigger>
+              <TabsTrigger value="mandirian-pocket">Mandirian Pocket</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="products" className="space-y-6">
+            <TabsContent value="mandirian-pocket" className="space-y-6">
               <DynamicUploader />
               {processedData.length > 0 && (
                 <div className="mt-8">
@@ -347,7 +357,7 @@ export default function DashboardPage() {
                       growth={stats.comparison?.trx?.growth ?? 0}
                     />
                     <KPICard
-                      title="Total Sales Volume (YtD)"
+                      title="Sales Volume & MDFG (YtD)"
                       value={stats.comparison?.sv?.value ?? 0}
                       comparisonText={formatComparisonText(stats.comparison?.sv?.value ?? 0, stats.comparison?.sv?.prevValue ?? 0, "Prev")}
                       growth={stats.comparison?.sv?.growth ?? 0}
@@ -360,9 +370,59 @@ export default function DashboardPage() {
                     />
                   </div>
                   {/* Chart Tren */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <TransactionTrendChart />
-                    <SalesVolumeTrendChart />
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>4-Week Transaction (Trx) Trend</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="h-[250px] w-full">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={stats.trxTrend || []} className="w-full h-full" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                              <XAxis dataKey="week" stroke="#334155" fontSize={12} />
+                              <YAxis stroke="#334155" fontSize={12} />
+                              <Tooltip />
+                              <Bar dataKey="trx" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>4-Week Sales Volume (SV) Trend</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="h-[250px] w-full">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={stats.svTrend || []} className="w-full h-full" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                              <XAxis dataKey="week" stroke="#334155" fontSize={12} />
+                              <YAxis stroke="#334155" fontSize={12} />
+                              <Tooltip />
+                              <Bar dataKey="sv" fill="#10b981" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    {/* 4-Week MDFG Trend Chart */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>4-Week MDFG Trend</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="h-[250px] w-full">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={stats.mdfgTrend || []} className="w-full h-full" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                              <XAxis dataKey="week" stroke="#334155" fontSize={12} />
+                              <YAxis stroke="#334155" fontSize={12} />
+                              <Tooltip />
+                              <Bar dataKey="mdfg" fill="#2563eb" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
                   {/* Tabel Peringkat */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">

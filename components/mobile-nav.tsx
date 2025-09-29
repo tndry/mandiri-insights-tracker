@@ -18,11 +18,10 @@ interface MobileNavProps {
 
 export function MobileNav({ className, setActiveTab }: MobileNavProps) {
   const [open, setOpen] = React.useState(false);
-  // Mapping tab value sesuai tab utama
-  const navTabs = [
-    { value: "overview", label: "Overview & Map" },
-    { value: "upload", label: "Upload Data" },
-    { value: "reports", label: "Reports" },
+  // Mobile tab options to match desktop
+  const mobileTabs = [
+    { value: "merchant-tracker", label: "Merchant Tracker" },
+    { value: "mandirian-pocket", label: "Mandirian Pocket" },
   ];
   const handleNav = (tab: string) => {
     if (setActiveTab) setActiveTab(tab);
@@ -42,7 +41,7 @@ export function MobileNav({ className, setActiveTab }: MobileNavProps) {
           <SheetDescription>Pilih halaman tujuan Anda.</SheetDescription>
         </SheetHeader>
         <nav className="flex flex-col gap-2 p-6 pt-2">
-          {navTabs.map((tab) => (
+          {mobileTabs.map((tab) => (
             <Button
               key={tab.value}
               variant="ghost"

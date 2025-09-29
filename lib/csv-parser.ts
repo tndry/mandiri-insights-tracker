@@ -103,6 +103,7 @@ export const calculateStats = (data: MerchantData[]): MerchantStats => {
         trx: { value: 0, prevValue: 0, growth: 0 },
         sv: { value: 0, prevValue: 0, growth: 0 },
         edc: { value: 0, prevValue: 0, growth: 0 },
+        mdfg: { value: 0, prevValue: 0, growth: 0 },
       },
       trxTrend: [],
       svTrend: [],
@@ -119,10 +120,46 @@ export const calculateStats = (data: MerchantData[]): MerchantStats => {
         sv: { '2024': 0, '2025': 0 },
         edc: { '2024': 0, '2025': 0 },
       },
+      mdfgTrend: [],
     };
   }
   // Deteksi semua nama kolom dari baris data pertama
   const allKeys = Object.keys(data[0]);
+
+  // --- YEAR SUFFIX LOGIC (moved up) ---
+  const ytdYearRegex = /ytd (?:trx|sv) w\d+ (\d+)/;
+  const yearsInData = new Set<string>();
+  allKeys.forEach(key => {
+    const match = key.match(ytdYearRegex);
+    if (match && match[1]) {
+      yearsInData.add(match[1]); // Menambahkan '24', '25', dll.
+    }
+  });
+
+  const sortedYears = Array.from(yearsInData).sort((a, b) => b.localeCompare(a));
+  const currentYearSuffix = sortedYears[0] || null; // ex: '25'
+  const prevYearSuffix = sortedYears[1] || null;    // ex: '24'
+
+  // --- 4-week MDFG Trend ---
+  const mdfgWeekColRegex = /^mdfg w(\d+) '([\d]+)$/;
+  let mdfgTrend: Array<{ week: string; mdfg: number }> = [];
+  if (data.length > 0 && currentYearSuffix) {
+    const mdfgWeekCols = allKeys
+      .map(key => {
+        const match = key.match(mdfgWeekColRegex);
+        if (match) {
+          return { key, week: match[1], year: match[2] };
+        }
+        return null;
+      })
+      .filter((v): v is { key: string; week: string; year: string } => v !== null && v.year === currentYearSuffix);
+    // Sort by week descending, take 4 most recent
+    const sortedMdfgWeeks = mdfgWeekCols.sort((a, b) => parseInt(b.week) - parseInt(a.week)).slice(0, 4);
+    mdfgTrend = sortedMdfgWeeks.map(({ key, week }) => ({
+      week: `W${week}`,
+      mdfg: data.reduce((sum, m) => sum + (m[key as keyof MerchantData] as number || 0), 0)
+    })).reverse(); // reverse for chronological order
+  }
 
   // --- Leaderboard MDFG & SV ---
   // Siapkan sortedSvWeekKeys lebih awal
@@ -185,18 +222,8 @@ export const calculateStats = (data: MerchantData[]): MerchantStats => {
     });
   // svWeekRegex & sortedSvWeekKeys sudah dideklarasikan di atas
 
-  const ytdYearRegex = /ytd (?:trx|sv) w\d+ (\d+)/;
-  const yearsInData = new Set<string>();
-  allKeys.forEach(key => {
-    const match = key.match(ytdYearRegex);
-    if (match && match[1]) {
-      yearsInData.add(match[1]); // Menambahkan '24', '25', dll.
-    }
-  });
-
-  const sortedYears = Array.from(yearsInData).sort((a, b) => b.localeCompare(a));
-  const currentYearSuffix = sortedYears[0] || null; // ex: '25'
-  const prevYearSuffix = sortedYears[1] || null;    // ex: '24'
+  // --- YEAR SUFFIX LOGIC (moved up) ---
+  // Sudah dipindahkan ke atas
 
   // Cari nama kolom YtD yang lengkap berdasarkan tahun yang terdeteksi
   const trxKeyCurrent = currentYearSuffix ? allKeys.find(k => k.startsWith("ytd trx") && k.endsWith(currentYearSuffix)) : null;
@@ -214,6 +241,7 @@ export const calculateStats = (data: MerchantData[]): MerchantStats => {
   let trxCurrentYear = 0, trxPrevYear = 0;
   let svCurrentYear = 0, svPrevYear = 0;
   let edcTotal = 0;
+  let mdfgCurrentYear = 0, mdfgPrevYear = 0;
 
   data.forEach((merchant) => {
     // Cek EDC
@@ -246,12 +274,18 @@ export const calculateStats = (data: MerchantData[]): MerchantStats => {
     const trxYtdPrev = trxKeyPrev ? (merchant[trxKeyPrev as keyof MerchantData] as number || 0) : 0;
     const svYtdCurrent = svKeyCurrent ? (merchant[svKeyCurrent as keyof MerchantData] as number || 0) : 0;
     const svYtdPrev = svKeyPrev ? (merchant[svKeyPrev as keyof MerchantData] as number || 0) : 0;
+    // MDFG YtD
+    const mdfgKeyCurrent = currentYearSuffix ? allKeys.find(k => k.startsWith("ytd mdfg") && k.endsWith(currentYearSuffix)) : null;
+    const mdfgKeyPrev = prevYearSuffix ? allKeys.find(k => k.startsWith("ytd mdfg") && k.endsWith(prevYearSuffix)) : null;
+    const mdfgYtdCurrent = mdfgKeyCurrent ? (merchant[mdfgKeyCurrent as keyof MerchantData] as number || 0) : 0;
+    const mdfgYtdPrev = mdfgKeyPrev ? (merchant[mdfgKeyPrev as keyof MerchantData] as number || 0) : 0;
 
     trxCurrentYear += trxYtdCurrent;
     trxPrevYear += trxYtdPrev;
     svCurrentYear += svYtdCurrent;
     svPrevYear += svYtdPrev;
-    
+    mdfgCurrentYear += mdfgYtdCurrent;
+    mdfgPrevYear += mdfgYtdPrev;
     if (trxYtdPrev > 0) merchantsPrevYear++;
     if (trxYtdCurrent > 0) merchantsCurrentYear++;
   });
@@ -327,6 +361,11 @@ export const calculateStats = (data: MerchantData[]): MerchantStats => {
         prevValue: edcTotal,
         growth: 0,
       },
+      mdfg: {
+        value: mdfgCurrentYear,
+        prevValue: mdfgPrevYear,
+        growth: calcGrowth(mdfgCurrentYear, mdfgPrevYear),
+      },
     },
     trxTrend,
     svTrend,
@@ -344,5 +383,6 @@ export const calculateStats = (data: MerchantData[]): MerchantStats => {
       sv: { '2024': 0, '2025': 0 },
       edc: { '2024': 0, '2025': 0 },
     },
+    mdfgTrend,
   };
 };

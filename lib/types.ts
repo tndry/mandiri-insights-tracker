@@ -101,6 +101,11 @@ export interface MerchantStats {
       prevValue: number;
       growth: number;
     };
+    mdfg: {
+      value: number;
+      prevValue: number;
+      growth: number;
+    };
   };
   trxTrend: Array<{ week: string; trx: number }>;
   svTrend: Array<{ week: string; sv: number }>;
@@ -120,4 +125,6 @@ export interface MerchantStats {
     sv: { '2024': number; '2025': number };
     edc: { '2024': number; '2025': number };
   };
+  // 4-week MDFG trend
+  mdfgTrend: Array<{ week: string; mdfg: number }>;
 }
