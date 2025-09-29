@@ -356,12 +356,29 @@ export default function DashboardPage() {
                       comparisonText={formatComparisonText(stats.comparison?.trx?.value ?? 0, stats.comparison?.trx?.prevValue ?? 0, "Prev")}
                       growth={stats.comparison?.trx?.growth ?? 0}
                     />
-                    <KPICard
-                      title="Sales Volume & MDFG (YtD)"
-                      value={stats.comparison?.sv?.value ?? 0}
-                      comparisonText={formatComparisonText(stats.comparison?.sv?.value ?? 0, stats.comparison?.sv?.prevValue ?? 0, "Prev")}
-                      growth={stats.comparison?.sv?.growth ?? 0}
-                    />
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Sales Volume & MDFG (YtD)</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-xs text-muted-foreground">Total Sales Volume (YtD)</div>
+                        <div className="text-lg font-bold text-foreground">
+                          Rp {stats.comparison?.sv?.value?.toLocaleString() ?? 0}
+                        </div>
+                        <div className={`text-xs font-semibold ${(stats.comparison?.sv?.growth ?? 0) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                          {(stats.comparison?.sv?.growth ?? 0).toFixed(1)}% YoY
+                        </div>
+                        <div className="text-xs text-muted-foreground">{formatComparisonText(stats.comparison?.sv?.value ?? 0, stats.comparison?.sv?.prevValue ?? 0, "Prev")}</div>
+                        <hr className="my-2 border-slate-700" />
+                        <div className="text-xs text-muted-foreground">Total MDFG (YtD)</div>
+                        <div className="text-lg font-bold text-foreground">
+                          {stats.comparison?.mdfg?.value?.toLocaleString() ?? 0}
+                        </div>
+                        <div className={`text-xs font-semibold ${(stats.comparison?.mdfg?.growth ?? 0) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                          {(stats.comparison?.mdfg?.growth ?? 0).toFixed(1)}% YoY
+                        </div>
+                      </CardContent>
+                    </Card>
                     <KPICard
                       title="Total EDC Devices"
                       value={stats.comparison?.edc?.value ?? 0}
