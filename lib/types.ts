@@ -1,3 +1,7 @@
+// Untuk hasil parsing CSV merchant
+export type ParseResult =
+  | { success: true; data: MerchantData[]; rowCount: number }
+  | { success: false; error: string };
 // Untuk context ProductData
 export type ProductDataContextType = {
   productFiles: UploadedProductFile[];
@@ -44,33 +48,8 @@ export interface UploadedProductFile {
     "nama cabang rek": string;
     "area rek": string;
     "kwl rek": string;
-    "trx w33 '25": number;
-    "trx w32 '25": number;
-    "trx w31 '25": number;
-    "trx w30 '25": number;
-    "fy trx 24": number;
-    "ytd trx w33 24": number;
-    "ytd trx w33 25": number;
-    "growth yoy trx": string;
-    "%yoy trx": string;
-    "sv w33 '25": number;
-    "sv w32 '25": number;
-    "sv w31 '25": number;
-    "sv w30 '25": number;
-    "fy sv 24": number;
-    "ytd sv w33 24": number;
-    "ytd sv w33 25": number;
-    "growth yoy sv": string;
-    "%yoy sv": string;
-    "mdfg w33 '25": number;
-    "mdfg w32 '25": number;
-    "mdfg w31 '25": number;
-    "mdfg w30 '25": number;
-    "fy mdfg 24": number;
-    "ytd mdfg w33 24": number;
-    "ytd mdfg w33 25": number;
-    "growth yoy mdfg": string;
-    "%yoy mdfg": string;
+    // Index signature for dynamic columns
+    [key: string]: string | number;
   }
 
 export interface MerchantStats {
@@ -120,10 +99,11 @@ export interface MerchantStats {
   topLOBsBySV: Array<{ name: string; value: number }>;
   // Raw YtD values for 2024 and 2025
   ytd: {
-    merchants: { '2024': number; '2025': number };
-    trx: { '2024': number; '2025': number };
-    sv: { '2024': number; '2025': number };
-    edc: { '2024': number; '2025': number };
+    merchants: { [year: string]: number };
+    trx: { [year: string]: number };
+    sv: { [year: string]: number };
+    mdfg?: { [year: string]: number };
+    edc?: { [year: string]: number };
   };
   // 4-week MDFG trend
   mdfgTrend: Array<{ week: string; mdfg: number }>;
