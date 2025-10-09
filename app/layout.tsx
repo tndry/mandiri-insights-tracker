@@ -4,6 +4,9 @@ import "./globals.css";
 import { MerchantProvider } from '@/contexts/merchant-context';
 import { ProductDataProvider } from '@/contexts/product-data-context';
 import { ThemeProvider } from '@/components/theme-provider';
+import "leaflet/dist/leaflet.css";
+import "leaflet.markercluster/dist/MarkerCluster.css";
+import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 
 const inter = Inter({
   subsets: ["latin"],

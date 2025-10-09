@@ -17,6 +17,7 @@ import {
 } from "recharts";
 import { Users, MapPin } from "lucide-react";
 import { useMerchants } from "@/contexts/merchant-context";
+import { useTheme } from "next-themes";
 
 const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#84cc16", "#f97316"];
 const moneyFormatter = (number: number) => `Rp ${new Intl.NumberFormat('id').format(number)}`;
@@ -97,6 +98,7 @@ export function SegmentDistribution() {
 
 export function EDCByBranch() {
   const { stats } = useMerchants();
+  const { theme } = useTheme();
   const chartData = Object.entries(stats.edcByBranch)
     .map(([branch, count]) => ({ branch, count: Number(count) }))
     .filter(item => item.branch && item.branch !== 'Unknown' && !isNaN(item.count))
@@ -125,7 +127,7 @@ export function EDCByBranch() {
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 30, left: 100, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" />
+              <CartesianGrid strokeDasharray="3 3" stroke={theme === 'dark' ? '#374151' : '#e5e7eb'} />
               <XAxis type="number" />
               <YAxis dataKey="branch" type="category" width={100} tick={{ fontSize: 12 }} />
               <Tooltip formatter={(value: number) => [value, "EDC Devices"]} />
@@ -140,6 +142,7 @@ export function EDCByBranch() {
 
 export function TransactionTrendChart() {
   const { stats } = useMerchants();
+  const { theme } = useTheme();
   const chartData = (stats.trxTrend || []).map(item => ({
     week: item.week,
     trx: item.trx,
@@ -167,7 +170,7 @@ export function TransactionTrendChart() {
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--grid-color)" />
+              <CartesianGrid strokeDasharray="3 3" stroke={theme === 'dark' ? '#374151' : '#e5e7eb'} />
               <XAxis dataKey="week" />
               <YAxis />
               <Tooltip formatter={(value: number) => [value, "Transactions"]} />
@@ -182,6 +185,7 @@ export function TransactionTrendChart() {
 
 export function SalesVolumeTrendChart() {
   const { stats } = useMerchants();
+  const { theme } = useTheme();
   const chartData = (stats.svTrend || []).map(item => ({
     week: item.week,
     sv: item.sv,
@@ -209,7 +213,7 @@ export function SalesVolumeTrendChart() {
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--grid-color)" />
+              <CartesianGrid strokeDasharray="3 3" stroke={theme === 'dark' ? '#374151' : '#e5e7eb'} />
               <XAxis dataKey="week" />
               <YAxis tickFormatter={(value: number) => `Rp${(value / 1000000).toFixed(1)}M`} />
               <Tooltip formatter={(value: number) => `Rp${value.toLocaleString()}`} />

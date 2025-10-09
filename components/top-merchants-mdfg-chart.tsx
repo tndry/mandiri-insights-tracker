@@ -3,9 +3,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { useMerchants } from "@/contexts/merchant-context";
+import { useTheme } from "next-themes";
 
 export function TopMerchantsMDFGChart() {
   const { stats } = useMerchants();
+  const { theme } = useTheme();
   const chartData = stats.topMerchantsByMDFG || [];
 
   if (!chartData.length) {
@@ -32,7 +34,7 @@ export function TopMerchantsMDFGChart() {
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 30, left: 140, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" />
+              <CartesianGrid strokeDasharray="3 3" stroke={theme === 'dark' ? '#374151' : '#e5e7eb'} />
               <XAxis type="number" />
               <YAxis
                 dataKey="name"

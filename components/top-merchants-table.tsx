@@ -16,6 +16,7 @@ import {
   ColumnDef,
 } from "@tanstack/react-table";
 import type { MerchantData } from "@/lib/types";
+import { useMerchants } from "@/contexts/merchant-context";
 
 interface TopMerchantsTableProps {
   data: MerchantData[];
@@ -31,6 +32,7 @@ function getTotalSV(merchant: MerchantData): number {
 export function TopMerchantsTable({ data }: TopMerchantsTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
+  const { setSelectedMerchant } = useMerchants();
 
   // Proses data mentah menjadi data yang siap ditampilkan di tabel
   const tableData = useMemo(() =>
@@ -38,6 +40,7 @@ export function TopMerchantsTable({ data }: TopMerchantsTableProps) {
       mid_new: m.mid_new,
       name: m.merchantofficialname || m.commonname || "N/A",
       sv: getTotalSV(m),
+      originalMerchant: m, // Simpan data merchant asli untuk onClick handler
     })),
     [data]
   );
@@ -111,7 +114,11 @@ export function TopMerchantsTable({ data }: TopMerchantsTableProps) {
             <tbody>
               {table.getRowModel().rows.length ? (
                 table.getRowModel().rows.map(row => (
-                  <tr key={row.id} className="border-b last:border-b-0 hover:bg-muted/50">
+                  <tr 
+                    key={row.id} 
+                    className="border-b last:border-b-0 hover:bg-muted/50 cursor-pointer"
+                    onClick={() => setSelectedMerchant(row.original.originalMerchant)}
+                  >
                     {row.getVisibleCells().map(cell => (
                       <td key={cell.id} className="px-4 py-2">
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}

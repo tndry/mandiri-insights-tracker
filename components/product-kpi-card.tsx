@@ -25,26 +25,51 @@ export function ProductKPICard({ product, selectedMonth }: ProductKPICardProps) 
     }
 
     const rawData = product.data[0] || {};
-    
-    // --- Kalkulasi KPI untuk bulan terpilih ---
-    const month = selectedMonth.toUpperCase();
-    const target = rawData[`${month}_TARGET`] || 0;
-    const posisi = rawData[`${month}_POSISI`] || 0;
-    const pencapaian = target > 0 ? (posisi / target) * 100 : 0;
-    const gapSurplus = rawData[`${month}_GAP/SURPLUS`] ?? rawData[`${month}_GAP`] ?? null;
-    const ytd = rawData[`${month}_YTD`] ?? null;
-
-    const kpiResult = { target, posisi, pencapaian, gapSurplus, ytd };
-
-    // --- Kalkulasi data untuk chart (semua bulan) ---
-    const months = new Set<string>();
     const monthOrder = ["JAN", "FEB", "MAR", "APR", "MEI", "JUN", "JUL", "AGU", "SEP", "OKT", "NOV", "DES"];
+    
+    // Deteksi bulan yang tersedia dalam data
+    const availableMonths = new Set<string>();
     Object.keys(rawData).forEach(key => {
       const monthKey = key.split('_')[0];
-      if (monthOrder.includes(monthKey)) months.add(monthKey);
+      if (monthOrder.includes(monthKey)) availableMonths.add(monthKey);
     });
 
-    const chartResult = Array.from(months)
+    let kpiResult;
+
+    // --- Kalkulasi KPI berdasarkan filter bulan ---
+    if (!selectedMonth || selectedMonth === "Semua Bulan" || selectedMonth === "all") {
+      // Jika "Semua Bulan" dipilih, akumulasi total dari semua bulan yang tersedia
+      const totalTarget = Array.from(availableMonths).reduce((sum, month) => {
+        return sum + (rawData[`${month}_TARGET`] || 0);
+      }, 0);
+      
+      const totalPosisi = Array.from(availableMonths).reduce((sum, month) => {
+        return sum + (rawData[`${month}_POSISI`] || 0);
+      }, 0);
+      
+      const pencapaian = totalTarget > 0 ? (totalPosisi / totalTarget) * 100 : 0;
+      
+      kpiResult = { 
+        target: totalTarget, 
+        posisi: totalPosisi, 
+        pencapaian, 
+        gapSurplus: null, // GAP/SURPLUS tidak applicable untuk total semua bulan
+        ytd: totalPosisi // YTD sama dengan total posisi untuk "Semua Bulan"
+      };
+    } else {
+      // Logika untuk bulan tertentu
+      const month = selectedMonth.toUpperCase();
+      const target = rawData[`${month}_TARGET`] || 0;
+      const posisi = rawData[`${month}_POSISI`] || 0;
+      const pencapaian = target > 0 ? (posisi / target) * 100 : 0;
+      const gapSurplus = rawData[`${month}_GAP/SURPLUS`] ?? rawData[`${month}_GAP`] ?? null;
+      const ytd = rawData[`${month}_YTD`] ?? null;
+
+      kpiResult = { target, posisi, pencapaian, gapSurplus, ytd };
+    }
+
+    // --- Kalkulasi data untuk chart (semua bulan) ---
+    const chartResult = Array.from(availableMonths)
       .sort((a, b) => monthOrder.indexOf(a) - monthOrder.indexOf(b))
       .map(m => ({
         name: m,
@@ -55,6 +80,12 @@ export function ProductKPICard({ product, selectedMonth }: ProductKPICardProps) 
     return { kpiData: kpiResult, chartData: chartResult };
 
   }, [product.data, selectedMonth]);
+
+  // Format angka dengan notasi ringkas (1.3M, 500K, dll)
+  const compactFormatter = new Intl.NumberFormat('id', { 
+    notation: 'compact', 
+    maximumFractionDigits: 1 
+  });
 
   return (
     <Card className="flex flex-col transition-shadow hover:shadow-md">
@@ -67,12 +98,12 @@ export function ProductKPICard({ product, selectedMonth }: ProductKPICardProps) 
           {/* KPI Target */}
           <div>
             <p className="text-sm text-muted-foreground">Target</p>
-            <p className="text-2xl font-bold">{kpiData.target.toLocaleString()}</p>
+            <p className="text-2xl font-bold">{compactFormatter.format(kpiData.target)}</p>
           </div>
           {/* KPI Posisi */}
           <div>
             <p className="text-sm text-muted-foreground">Posisi</p>
-            <p className="text-2xl font-bold">{kpiData.posisi.toLocaleString()}</p>
+            <p className="text-2xl font-bold">{compactFormatter.format(kpiData.posisi)}</p>
           </div>
           {/* KPI Pencapaian & Blok GAP/YTD rata kiri */}
           <div className="flex flex-col items-start">
@@ -85,11 +116,11 @@ export function ProductKPICard({ product, selectedMonth }: ProductKPICardProps) 
                 const gapColor = gap < 0 ? "text-red-600" : "text-green-600";
                 const gapSign = gap > 0 ? "+" : "";
                 return (
-                  <p className={`text-xs font-medium ${gapColor}`}>GAP: {gapSign}{gap.toLocaleString()}</p>
+                  <p className={`text-xs font-medium ${gapColor}`}>GAP: {gapSign}{compactFormatter.format(gap)}</p>
                 );
               })()}
               {kpiData.ytd !== null && (
-                <p className="text-xs font-medium text-muted-foreground mt-1">YTD: {kpiData.ytd.toLocaleString()}</p>
+                <p className="text-xs font-medium text-muted-foreground mt-1">YTD: {compactFormatter.format(kpiData.ytd)}</p>
               )}
             </div>
           </div>

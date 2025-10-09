@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet"
+import { useEffect, useState, useRef } from "react"
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet"
 import L from "leaflet"
 import MarkerClusterGroup from "react-leaflet-markercluster"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -12,15 +12,41 @@ import { useMerchants } from "@/contexts/merchant-context"
 import type { MerchantData } from "@/lib/types"
 import { generateCoordinatesFromAddress, getGoogleMapsDirectionsUrl, type Coordinates } from "@/lib/geocoding"
 
+// Import leaflet fix dinamis untuk client-side only
+if (typeof window !== "undefined") {
+  import("@/lib/leaflet-fix");
+}
+
 // ...existing code...
 
-interface MerchantMarker extends MerchantData {
+interface MerchantMarker {
+  merchant: MerchantData
   coordinates: Coordinates
   hasEDC: boolean
 }
 
+// Helper component to get map instance
+function MapInstanceHandler({ setMap, selectedMerchant }: { setMap: (map: any) => void, selectedMerchant: MerchantData | null }) {
+  const map = useMap();
+  
+  useEffect(() => {
+    setMap(map);
+  }, [map, setMap]);
+
+  useEffect(() => {
+    if (selectedMerchant && map) {
+      const coords = generateCoordinatesFromAddress(selectedMerchant.alamat || "Bogor");
+      if (coords) {
+        map.flyTo([coords.lat, coords.lng], 20);
+      }
+    }
+  }, [selectedMerchant, map]);
+
+  return null;
+}
+
 export function MerchantMap() {
-  const { filteredMerchants, hoveredMerchantId } = useMerchants()
+  const { filteredMerchants, hoveredMerchantId, selectedMerchant } = useMerchants()
   const [merchantMarkers, setMerchantMarkers] = useState<MerchantMarker[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [leafletLoaded, setLeafletLoaded] = useState(false)
@@ -28,12 +54,6 @@ export function MerchantMap() {
 
   // Load Leaflet CSS and create custom icons
   useEffect(() => {
-    // Set custom marker icons (once)
-    L.Icon.Default.mergeOptions({
-      iconRetinaUrl: "/leaflet/marker-icon-2x.png",
-      iconUrl: "/leaflet/marker-icon.png",
-      shadowUrl: "/leaflet/marker-shadow.png",
-    });
     setLeafletLoaded(true);
   }, []);
 
@@ -43,7 +63,7 @@ export function MerchantMap() {
       setIsLoading(true)
 
       const processedMarkers: MerchantMarker[] = filteredMerchants.map((merchant) => ({
-        ...merchant,
+        merchant,
         coordinates: generateCoordinatesFromAddress(merchant.alamat || "Bogor"),
         hasEDC: !!(merchant["tgl pasang edc"] && merchant["tgl pasang edc"].trim() !== ""),
       }))
@@ -148,27 +168,28 @@ export function MerchantMap() {
               zoom={12}
               style={{ height: "100%", width: "100%" }}
               className="z-0"
-              whenCreated={setMap}
             >
+              <MapInstanceHandler setMap={setMap} selectedMerchant={selectedMerchant} />
               <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-              <MarkerClusterGroup>
-                {merchantMarkers.map((merchant, index) => {
+                            <MarkerClusterGroup>
+                {merchantMarkers.map((markerData, index) => {
                   // Create custom icon using leaflet's L.icon
                   const customIcon = L.icon({
                     iconUrl:
-                      merchant.mid_new === hoveredMerchantId
+                      markerData.merchant.mid_new === hoveredMerchantId || markerData.merchant.mid_new === selectedMerchant?.mid_new
                         ? "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTE2IDRMMTcuODUgMTIuMzZMMjYgMTMuNUwxNy44NSAyMS42NEwxNiAzMkwxNC4xNSAyMS42NEw2IDEzLjVMMTQuMTUgMTIuMzZMMTYgNFoiIGZpbGw9IiMwMDY2ZGIiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIyIi8+Cjwvc3ZnPgo="
-                        : merchant.hasEDC
-                        ? "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1zbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMCA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDQgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSIjMTBiOTgxIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K"
-                        : "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1zbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMCA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDQgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSIjZWYzNDM4IiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K",
-                    iconSize: merchant.mid_new === hoveredMerchantId ? [32, 32] : [24, 24],
-                    iconAnchor: merchant.mid_new === hoveredMerchantId ? [16, 32] : [12, 24],
+                        : markerData.hasEDC
+                        ? "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMCA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDQgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSIjMTBiOTgxIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K"
+                        : "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMCA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDQgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSIjZWYzNDM4IiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K",
+                    iconSize: markerData.merchant.mid_new === hoveredMerchantId || markerData.merchant.mid_new === selectedMerchant?.mid_new ? [32, 32] : [24, 24],
+                    iconAnchor: markerData.merchant.mid_new === hoveredMerchantId || markerData.merchant.mid_new === selectedMerchant?.mid_new ? [16, 32] : [12, 24],
                     popupAnchor: [0, -24],
                   });
+                 
                   return (
                     <Marker
-                      key={`${merchant.mid_new}-${index}`}
-                      position={[merchant.coordinates.lat, merchant.coordinates.lng]}
+                      key={`${markerData.merchant.mid_new}-${index}`}
+                      position={[markerData.coordinates.lat, markerData.coordinates.lng]}
                       icon={customIcon}
                     >
                       <Popup>
@@ -176,43 +197,43 @@ export function MerchantMap() {
                           <div className="p-2 space-y-3">
                             <div className="border-b pb-2">
                               <h3 className="font-semibold text-base text-gray-900">
-                                {merchant.merchantofficialname || merchant.commonname}
+                                {markerData.merchant.merchantofficialname || markerData.merchant.commonname}
                               </h3>
-                              <Badge variant={merchant.hasEDC ? "default" : "destructive"} className="mt-1">
-                                {merchant.hasEDC ? "EDC Installed" : "No EDC"}
+                              <Badge variant={markerData.hasEDC ? "default" : "destructive"} className="mt-1">
+                                {markerData.hasEDC ? "EDC Installed" : "No EDC"}
                               </Badge>
                             </div>
                             <div className="space-y-2 text-sm">
                               <div className="flex items-start gap-2">
                                 <Building className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
                                 <div>
-                                  <p className="font-medium">{merchant.merchantofficialname}</p>
-                                  <p className="text-gray-600">{merchant.alamat}</p>
+                                  <p className="font-medium">{markerData.merchant.merchantofficialname}</p>
+                                  <p className="text-gray-600">{markerData.merchant.alamat}</p>
                                 </div>
                               </div>
-                              {merchant.contactperson && (
+                              {markerData.merchant.contactperson && (
                                 <div className="flex items-center gap-2">
                                   <Phone className="w-4 h-4 text-gray-500" />
-                                  <span>{merchant.contactperson}</span>
+                                  <span>{markerData.merchant.contactperson}</span>
                                 </div>
                               )}
                               <div className="grid grid-cols-2 gap-2 text-xs">
                                 <div>
                                   <span className="font-medium">Segment:</span>
                                   <br />
-                                  {merchant.segmen}
+                                  {markerData.merchant.segmen}
                                 </div>
                                 <div>
                                   <span className="font-medium">Area:</span>
                                   <br />
-                                  {merchant.cd_cbg}
+                                  {markerData.merchant.cd_cbg}
                                 </div>
                               </div>
-                              {merchant.hasEDC && (
+                              {markerData.hasEDC && (
                                 <div className="text-xs">
-                                  <span className="font-medium">EDC Count:</span> {merchant["jml edc"] || "N/A"}
+                                  <span className="font-medium">EDC Count:</span> {markerData.merchant["jml edc"] || "N/A"}
                                   <br />
-                                  <span className="font-medium">Install Date:</span> {merchant["tgl pasang edc"]}
+                                  <span className="font-medium">Install Date:</span> {markerData.merchant["tgl pasang edc"]}
                                 </div>
                               )}
                             </div>
@@ -221,7 +242,7 @@ export function MerchantMap() {
                                 size="sm"
                                 className="w-full"
                                 onClick={() => {
-                                  const url = getGoogleMapsDirectionsUrl(merchant.coordinates)
+                                  const url = getGoogleMapsDirectionsUrl(markerData.coordinates)
                                   window.open(url, "_blank")
                                 }}
                               >

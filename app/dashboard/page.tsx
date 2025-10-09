@@ -174,7 +174,7 @@ export default function DashboardPage() {
           />
           <div className="h-6 w-px bg-slate-400 mx-2"></div>
           <Image
-            src="/logo-mit.png"
+            src="/mit-logo.png"
             alt="m.it Logo"
             width={180}
             height={48}
