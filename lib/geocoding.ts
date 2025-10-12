@@ -26,8 +26,12 @@ export function generateCoordinatesFromAddress(address: string): Coordinates {
   }
 }
 
-export function getGoogleMapsDirectionsUrl(coordinates: Coordinates): string {
-  return `https://www.google.com/maps/dir/?api=1&destination=${coordinates.lat},${coordinates.lng}`
+export function getGoogleMapsDirectionsUrl(coordinates: Coordinates | null): string {
+  if (!coordinates) {
+    // Mengembalikan link ke lokasi default jika koordinat tidak ada
+    return `https://www.google.com/maps`;
+  }
+  return `https://www.google.com/maps/dir/?api=1&destination=${coordinates.lat},${coordinates.lng}`;
 }
 
 // In a real implementation, you would use a geocoding service like:

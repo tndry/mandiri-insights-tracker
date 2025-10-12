@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, Tooltip as ChartTooltip, ResponsiveContainer } from "recharts";
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 // Tooltip dihapus, tidak digunakan lagi
 
 interface ProductKPICardProps {
@@ -81,11 +81,26 @@ export function ProductKPICard({ product, selectedMonth }: ProductKPICardProps) 
 
   }, [product.data, selectedMonth]);
 
-  // Format angka dengan notasi ringkas (1.3M, 500K, dll)
-  const compactFormatter = new Intl.NumberFormat('id', { 
-    notation: 'compact', 
-    maximumFractionDigits: 1 
-  });
+  // State untuk nilai yang telah diformat - inisialisasi dengan toLocaleString untuk menghindari hydration error
+  const [formattedTarget, setFormattedTarget] = useState(kpiData.target.toLocaleString('en-US'));
+  const [formattedPosisi, setFormattedPosisi] = useState(kpiData.posisi.toLocaleString('en-US'));
+  const [formattedGap, setFormattedGap] = useState((kpiData.posisi - kpiData.target).toLocaleString('en-US'));
+  const [formattedYtd, setFormattedYtd] = useState(kpiData.ytd?.toLocaleString('en-US') || '0');
+
+  // useEffect untuk memformat angka di sisi klien setelah hidrasi
+  useEffect(() => {
+    const compactFormatter = new Intl.NumberFormat('id-ID', {
+      notation: 'compact',
+      maximumFractionDigits: 1
+    });
+    
+    setFormattedTarget(compactFormatter.format(kpiData.target));
+    setFormattedPosisi(compactFormatter.format(kpiData.posisi));
+    setFormattedGap(compactFormatter.format(kpiData.posisi - kpiData.target));
+    if (kpiData.ytd !== null) {
+      setFormattedYtd(compactFormatter.format(kpiData.ytd));
+    }
+  }, [kpiData]);
 
   return (
     <Card className="flex flex-col transition-shadow hover:shadow-md">
@@ -98,12 +113,12 @@ export function ProductKPICard({ product, selectedMonth }: ProductKPICardProps) 
           {/* KPI Target */}
           <div>
             <p className="text-sm text-muted-foreground">Target</p>
-            <p className="text-2xl font-bold">{compactFormatter.format(kpiData.target)}</p>
+            <p className="text-2xl font-bold">{formattedTarget}</p>
           </div>
           {/* KPI Posisi */}
           <div>
             <p className="text-sm text-muted-foreground">Posisi</p>
-            <p className="text-2xl font-bold">{compactFormatter.format(kpiData.posisi)}</p>
+            <p className="text-2xl font-bold">{formattedPosisi}</p>
           </div>
           {/* KPI Pencapaian & Blok GAP/YTD rata kiri */}
           <div className="flex flex-col items-start">
@@ -116,11 +131,11 @@ export function ProductKPICard({ product, selectedMonth }: ProductKPICardProps) 
                 const gapColor = gap < 0 ? "text-red-600" : "text-green-600";
                 const gapSign = gap > 0 ? "+" : "";
                 return (
-                  <p className={`text-xs font-medium ${gapColor}`}>GAP: {gapSign}{compactFormatter.format(gap)}</p>
+                  <p className={`text-xs font-medium ${gapColor}`}>GAP: {gapSign}{formattedGap}</p>
                 );
               })()}
               {kpiData.ytd !== null && (
-                <p className="text-xs font-medium text-muted-foreground mt-1">YTD: {compactFormatter.format(kpiData.ytd)}</p>
+                <p className="text-xs font-medium text-muted-foreground mt-1">YTD: {formattedYtd}</p>
               )}
             </div>
           </div>
