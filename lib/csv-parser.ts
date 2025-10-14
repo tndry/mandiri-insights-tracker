@@ -18,14 +18,15 @@ export function parseCSV(file: File): Promise<ParseResult> {
 
         // Cek apakah header adalah kolom numerik
         if (numericKeywords.some(key => lowerCaseHeader.includes(key))) {
-          // 1. Hapus semua karakter yang BUKAN angka (seperti koma, spasi, dll)
-          const cleanedValue = value.replace(/[^0-9.-]/g, '');
-
-          // 2. Jika hasilnya string kosong, kembalikan 0
-          if (cleanedValue === '' || cleanedValue === '-') return 0;
-
-          // 3. Ubah menjadi angka (float) secara paksa
-          return parseFloat(cleanedValue);
+          // 1. Hapus semua titik (pemisah ribuan)
+          const withoutThousandsSeparators = value.replace(/\./g, '');
+          // 2. Ganti koma (pemisah desimal) menjadi titik
+          const standardizedDecimal = withoutThousandsSeparators.replace(',', '.');
+          // 3. Jika hasilnya string kosong, kembalikan 0
+          if (standardizedDecimal === '' || standardizedDecimal === '-') return 0;
+          // 4. Ubah menjadi angka (float)
+          const number = parseFloat(standardizedDecimal);
+          return isNaN(number) ? 0 : number; // Kembalikan 0 jika hasilnya bukan angka
         }
 
         // Jika bukan kolom numerik, kembalikan nilai aslinya

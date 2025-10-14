@@ -17,6 +17,8 @@ interface MerchantContextType {
   setHoveredMerchantId: React.Dispatch<React.SetStateAction<string | null>>
   selectedMerchant: MerchantData | null
   setSelectedMerchant: React.Dispatch<React.SetStateAction<MerchantData | null>>
+  individualTrend: any | null
+  setIndividualTrend: React.Dispatch<React.SetStateAction<any | null>>
 }
 
 const MerchantContext = createContext<MerchantContextType | undefined>(undefined)
@@ -25,6 +27,7 @@ export function MerchantProvider({ children }: { children: ReactNode }) {
   const [hoveredMerchantId, setHoveredMerchantId] = useState<string | null>(null);
   const [merchants, setMerchantsState] = useState<MerchantData[]>([])
   const [selectedMerchant, setSelectedMerchant] = useState<MerchantData | null>(null);
+  const [individualTrend, setIndividualTrend] = useState<any | null>(null);
 
   const [filters, setFilters] = useState({ cbg: 'all', segmen: 'all' }); 
 
@@ -38,7 +41,9 @@ export function MerchantProvider({ children }: { children: ReactNode }) {
     });
   }, [merchants, filters]);
 
-  const stats: MerchantStats = calculateStats(filteredMerchants);
+  const stats: MerchantStats = useMemo(() => {
+    return calculateStats(filteredMerchants);
+  }, [filteredMerchants]);
 
   const setMerchants = (newMerchants: MerchantData[]) => {
     setMerchantsState(newMerchants)
@@ -64,6 +69,8 @@ export function MerchantProvider({ children }: { children: ReactNode }) {
         setHoveredMerchantId,
         selectedMerchant,
         setSelectedMerchant,
+        individualTrend,
+        setIndividualTrend,
       }}
     >
       {children}

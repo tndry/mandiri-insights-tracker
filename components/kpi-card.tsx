@@ -7,6 +7,7 @@ interface KPICardProps {
   value: number;
   comparisonText: string;
   growth: number;
+  formattedValue?: string; // Optional pre-formatted value
 }
 
 const getColor = (growth: number) => {
@@ -15,11 +16,14 @@ const getColor = (growth: number) => {
   return "text-muted-foreground";
 };
 
-export const KPICard: React.FC<KPICardProps> = ({ title, value, comparisonText, growth }) => {
-  // Format value
-  let formattedValue = formatLargeNumber(value);
-  if (title.toLowerCase().includes("volume")) {
-    formattedValue = `Rp ${formattedValue}`;
+export const KPICard: React.FC<KPICardProps> = ({ title, value, comparisonText, growth, formattedValue: preFormattedValue }) => {
+  // Format value - use pre-formatted if provided, otherwise use default formatting
+  let formattedValue = preFormattedValue;
+  if (!formattedValue) {
+    formattedValue = formatLargeNumber(value);
+    if (title.toLowerCase().includes("volume")) {
+      formattedValue = `Rp ${formattedValue}`;
+    }
   }
   return (
     <DashboardCard>

@@ -24,15 +24,21 @@ interface TopMerchantsTableProps {
 
 // Fungsi helper untuk menghitung total SV
 function getTotalSV(merchant: MerchantData): number {
-  return Object.keys(merchant)
-    .filter((k) => k.startsWith("sv w"))
-    .reduce((sum, k) => sum + (Number(merchant[k as keyof MerchantData]) || 0), 0);
+  const svKeys = Object.keys(merchant).filter((k) => k.toLowerCase().startsWith("sv w"));
+  const total = svKeys.reduce((sum, k) => sum + (Number(merchant[k as keyof MerchantData]) || 0), 0);
+  return total;
 }
+
+// Formatter untuk angka SV dalam format ringkas - diletakkan di luar komponen untuk efisiensi
+const compactSVFormatter = new Intl.NumberFormat('id-ID', {
+  notation: 'compact',
+  compactDisplay: 'short'
+});
 
 export function TopMerchantsTable({ data }: TopMerchantsTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
-  const { setSelectedMerchant } = useMerchants();
+  const { setSelectedMerchant, selectedMerchant } = useMerchants();
 
   // Proses data mentah menjadi data yang siap ditampilkan di tabel
   const tableData = useMemo(() =>
@@ -49,8 +55,7 @@ export function TopMerchantsTable({ data }: TopMerchantsTableProps) {
   const columns = useMemo<ColumnDef<typeof tableData[0]>[]>(() => [
     {
       header: "Peringkat",
-      cell: ({ row }) => row.index + 1, // Peringkat akan otomatis menyesuaikan dengan filter & sort
-      enableSorting: false,
+      cell: ({ row }) => row.index + 1, 
     },
     {
       accessorKey: "name",
@@ -59,7 +64,7 @@ export function TopMerchantsTable({ data }: TopMerchantsTableProps) {
     {
       accessorKey: "sv",
       header: "Total SV (4 Minggu)",
-      cell: info => (info.getValue() as number).toLocaleString('id-ID'), // Format angka Indonesia
+      cell: info => compactSVFormatter.format(info.getValue() as number),
     },
   ], []);
 
@@ -116,8 +121,16 @@ export function TopMerchantsTable({ data }: TopMerchantsTableProps) {
                 table.getRowModel().rows.map(row => (
                   <tr 
                     key={row.id} 
-                    className="border-b last:border-b-0 hover:bg-muted/50 cursor-pointer"
-                    onClick={() => setSelectedMerchant(row.original.originalMerchant)}
+                    className={`border-b last:border-b-0 hover:bg-muted/50 cursor-pointer ${
+                      selectedMerchant?.mid_new === row.original.originalMerchant.mid_new 
+                        ? 'bg-blue-50 dark:bg-blue-900/20' 
+                        : ''
+                    }`}
+                    onClick={() =>
+                      selectedMerchant?.mid_new === row.original.originalMerchant.mid_new
+                        ? setSelectedMerchant(null) // Batalkan jika klik merchant yang sama
+                        : setSelectedMerchant(row.original.originalMerchant) // Pilih jika klik merchant baru
+                    }
                   >
                     {row.getVisibleCells().map(cell => (
                       <td key={cell.id} className="px-4 py-2">

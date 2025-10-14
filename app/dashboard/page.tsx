@@ -82,7 +82,7 @@ export default function DashboardPage() {
     event.target.value = "";
   };
   const { user, logout, checkPermission } = useAuth()
-  const { stats, merchants, filters, setFilters, filteredMerchants } = useMerchants();
+  const { stats, merchants, filters, setFilters, filteredMerchants, selectedMerchant, setIndividualTrend, individualTrend, setSelectedMerchant } = useMerchants();
   const { processedData } = useProductData();
 
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
@@ -104,11 +104,52 @@ export default function DashboardPage() {
     return options;
   }, [processedData]);
 
+  // Memoize the selected value for ThemedReactSelect to prevent infinite re-renders
+  const selectedMonthValue = useMemo(() => {
+    return availableMonths.find(opt => opt.value === selectedMonth) || null;
+  }, [availableMonths, selectedMonth]);
+
   useEffect(() => {
     if (availableMonths.length > 0 && !selectedMonth) {
       setSelectedMonth(availableMonths[0].value);
     }
   }, [availableMonths]);
+
+  // useEffect untuk mengkalkulasi data tren individual merchant
+  useEffect(() => {
+    if (selectedMerchant && stats.trxTrend && stats.trxTrend.length > 0) {
+      // Dapatkan 4 minggu terakhir dari data agregat (stats) sebagai referensi
+      const last4Weeks = stats.trxTrend.map(t => t.week.replace('W', ''));
+      
+      // Dapatkan tahun saat ini dari logika yang sama seperti di csv-parser
+      const currentYear = new Date().getFullYear().toString().slice(-2); // '25' untuk 2025
+      
+      // Kalkulasi data tren untuk merchant yang dipilih
+      const trxData = last4Weeks.map(week => ({ 
+        week: `W${week}`, 
+        trx: selectedMerchant[`trx w${week} '${currentYear}`] || 0 
+      }));
+      
+      const svData = last4Weeks.map(week => ({ 
+        week: `W${week}`, 
+        sv: selectedMerchant[`sv w${week} '${currentYear}`] || 0 
+      }));
+      
+      const mdfgData = last4Weeks.map(week => ({ 
+        week: `W${week}`, 
+        mdfg: selectedMerchant[`mdfg w${week} '${currentYear}`] || 0 
+      }));
+      
+      setIndividualTrend({ 
+        trx: trxData, 
+        sv: svData, 
+        mdfg: mdfgData 
+      });
+    } else {
+      setIndividualTrend(null); // Reset jika tidak ada merchant yang dipilih
+    }
+  }, [selectedMerchant, stats.trxTrend]); // Removed setIndividualTrend from dependencies
+
   // Helper for KPI comparison text
   const formatComparisonText = (current: number, prev: number, label: string) => {
     return `${label} ${prev.toLocaleString()} → ${current.toLocaleString()} (YoY)`;
@@ -147,12 +188,20 @@ export default function DashboardPage() {
   const segmenOptions = useMemo(() => {
     const allSegmen = merchants.map(m => typeof m.segmen === 'string' ? m.segmen.trim() : '').filter(Boolean);
     const uniqueSorted = Array.from(new Set(allSegmen)).sort((a, b) => a.localeCompare(b));
-    return ['all', ...uniqueSorted];
+    return [{ value: 'all', label: 'Semua Segmen' }, ...uniqueSorted.map(s => ({ value: s, label: s }))];
   }, [merchants]);
 
   const handleFilterChange = (key: 'cbg' | 'segmen', value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
+    setSelectedMerchant(null); // Reset merchant yang dipilih saat filter berubah
   };
+
+  // Compact formatter untuk nilai KPI yang besar
+  const compactFormatter = new Intl.NumberFormat('id-ID', {
+    notation: 'compact',
+    maximumFractionDigits: 1
+  });
+
   const [activeTab, setActiveTab] = useState("merchant-tracker");
 
   return (
@@ -210,7 +259,7 @@ export default function DashboardPage() {
                       <div className="max-w-[160px] min-w-0 w-full">
                         <ThemedReactSelect
                           options={availableMonths}
-                          value={availableMonths.find(opt => opt.value === selectedMonth) || null}
+                          value={selectedMonthValue}
                           onChange={opt => setSelectedMonth(opt?.value || 'all')}
                           isSearchable
                           placeholder="Pilih Bulan"
@@ -291,23 +340,21 @@ export default function DashboardPage() {
                             />
                         </div>
                         {/* Filter Segmen */}
-                        <div className="flex flex-col">
+                        <div className="flex flex-col w-[150px]">
                           <label className="text-sm font-medium text-foreground mb-1">Segmen</label>
-                          <Select value={filters.segmen} onValueChange={(value: string) => handleFilterChange('segmen', value)}>
-                              <SelectTrigger className="w-[150px]">
-                              <SelectValue>
-                                {filters.segmen === 'all' ? 'Semua Segmen' : filters.segmen || 'Pilih Segmen'}
-                              </SelectValue>
-                            </SelectTrigger>
-                            <SelectContent side="bottom">
-                              {segmenOptions.map(segmen => (
-                                <SelectItem key={segmen ?? ''} value={segmen ?? ''}>{segmen === 'all' ? 'Semua Segmen' : segmen || '-'}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <ThemedReactSelect
+                            options={segmenOptions}
+                            value={segmenOptions.find(opt => opt.value === filters.segmen)}
+                            onChange={opt => handleFilterChange('segmen', opt?.value ?? 'all')}
+                            isSearchable
+                            placeholder="Pilih Segmen"
+                          />
                         </div>
                         {(filters.cbg !== 'all' || filters.segmen !== 'all') && (
-                          <Button variant="outline" className="h-10 mt-6 sm:mt-0" onClick={() => setFilters({ cbg: 'all', segmen: 'all' })}>
+                          <Button variant="outline" className="h-10 mt-6 sm:mt-0" onClick={() => {
+                            setFilters({ cbg: 'all', segmen: 'all' });
+                            setSelectedMerchant(null); // Reset merchant yang dipilih saat filter direset
+                          }}>
                             Reset Filter
                           </Button>
                         )}
@@ -355,6 +402,7 @@ export default function DashboardPage() {
                       value={stats.comparison?.trx?.value ?? 0}
                       comparisonText={formatComparisonText(stats.comparison?.trx?.value ?? 0, stats.comparison?.trx?.prevValue ?? 0, "Prev")}
                       growth={stats.comparison?.trx?.growth ?? 0}
+                      formattedValue={compactFormatter.format(stats.comparison?.trx?.value ?? 0)}
                     />
                     <Card>
                       <CardHeader>
@@ -363,7 +411,7 @@ export default function DashboardPage() {
                       <CardContent>
                         <div className="text-xs text-muted-foreground">Total Sales Volume (YtD)</div>
                         <div className="text-lg font-bold text-foreground">
-                          Rp {stats.comparison?.sv?.value?.toLocaleString() ?? 0}
+                          Rp {compactFormatter.format(stats.comparison?.sv?.value ?? 0)}
                         </div>
                         <div className={`text-xs font-semibold ${(stats.comparison?.sv?.growth ?? 0) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                           {(stats.comparison?.sv?.growth ?? 0).toFixed(1)}% YoY
@@ -372,7 +420,7 @@ export default function DashboardPage() {
                         <hr className="my-2 border-slate-700" />
                         <div className="text-xs text-muted-foreground">Total MDFG (YtD)</div>
                         <div className="text-lg font-bold text-foreground">
-                          {stats.comparison?.mdfg?.value?.toLocaleString() ?? 0}
+                          {compactFormatter.format(stats.comparison?.mdfg?.value ?? 0)}
                         </div>
                         <div className={`text-xs font-semibold ${(stats.comparison?.mdfg?.growth ?? 0) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                           {(stats.comparison?.mdfg?.growth ?? 0).toFixed(1)}% YoY
@@ -390,12 +438,14 @@ export default function DashboardPage() {
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
                     <Card>
                       <CardHeader>
-                        <CardTitle>4-Week Transaction (Trx) Trend</CardTitle>
+                        <CardTitle>
+                          {selectedMerchant ? `Transaksi untuk ${selectedMerchant.commonname || selectedMerchant.merchantofficialname}` : "4-Week Transaction (Trx) Trend"}
+                        </CardTitle>
                       </CardHeader>
                       <CardContent>
                         <div className="h-[250px] w-full">
                           <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={stats.trxTrend || []} className="w-full h-full" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                            <BarChart data={individualTrend ? individualTrend.trx : stats.trxTrend || []} className="w-full h-full" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
                               <XAxis dataKey="week" stroke="#334155" fontSize={12} />
                               <YAxis stroke="#334155" fontSize={12} />
                               <Tooltip />
@@ -407,12 +457,14 @@ export default function DashboardPage() {
                     </Card>
                     <Card>
                       <CardHeader>
-                        <CardTitle>4-Week Sales Volume (SV) Trend</CardTitle>
+                        <CardTitle>
+                          {selectedMerchant ? `Sales Volume untuk ${selectedMerchant.commonname || selectedMerchant.merchantofficialname}` : "4-Week Sales Volume (SV) Trend"}
+                        </CardTitle>
                       </CardHeader>
                       <CardContent>
                         <div className="h-[250px] w-full">
                           <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={stats.svTrend || []} className="w-full h-full" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                            <BarChart data={individualTrend ? individualTrend.sv : stats.svTrend || []} className="w-full h-full" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
                               <XAxis dataKey="week" stroke="#334155" fontSize={12} />
                               <YAxis stroke="#334155" fontSize={12} />
                               <Tooltip />
@@ -425,12 +477,14 @@ export default function DashboardPage() {
                     {/* 4-Week MDFG Trend Chart */}
                     <Card>
                       <CardHeader>
-                        <CardTitle>4-Week MDFG Trend</CardTitle>
+                        <CardTitle>
+                          {selectedMerchant ? `MDFG untuk ${selectedMerchant.commonname || selectedMerchant.merchantofficialname}` : "4-Week MDFG Trend"}
+                        </CardTitle>
                       </CardHeader>
                       <CardContent>
                         <div className="h-[250px] w-full">
                           <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={stats.mdfgTrend || []} className="w-full h-full" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                            <BarChart data={individualTrend ? individualTrend.mdfg : stats.mdfgTrend || []} className="w-full h-full" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
                               <XAxis dataKey="week" stroke="#334155" fontSize={12} />
                               <YAxis stroke="#334155" fontSize={12} />
                               <Tooltip />
